@@ -1,0 +1,110 @@
+apply plugin: 'maven-publish'
+apply plugin: 'com.jfrog.bintray'
+
+afterEvaluate {
+    showInfo()
+    loadProperty()
+    configSourcesAndJavadoc()
+    configMaven()
+    configBintray()
+}
+
+def showInfo() {
+    println '----------------------------------------'
+    println project.groupId + ":" + project.artifactId + ":" + project.versionName
+    println project.desc
+    println project.website
+    println '----------------------------------------'
+}
+
+def loadProperty() {
+    Properties properties = new Properties()
+    File localPropertiesFile = project.rootProject.file("local.properties");
+    if (localPropertiesFile.exists()) {
+        properties.load(localPropertiesFile.newDataInputStream())
+        ext.bintrayUser = properties.getProperty("bintrayUser")
+        ext.bintrayApiKey = properties.getProperty("bintrayApiKey")
+    }
+}
+
+def configSourcesAndJavadoc() {
+    task sourcesJar(type: Jar) {
+        classifier = 'sources'
+        from android.sourceSets.main.java.srcDirs
+    }
+
+    task javadoc(type: Javadoc) {
+        source = android.sourceSets.main.java.srcDirs
+        classpath += configurations.compile
+        classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+    }
+
+    task javadocJar(type: Jar, dependsOn: javadoc) {
+        classifier = 'javadoc'
+        from javadoc.destinationDir
+    }
+
+    javadoc {
+        options {
+            encoding 'UTF-8'
+            charSet 'UTF-8'
+            author true
+            version project.versionName
+            links 'http://docs.oracle.com/javase/7/docs/api'
+            title "${project.desc} ${project.versionName}"
+        }
+    }
+}
+
+def configMaven() {
+    publishing {
+        publications {
+            Production(MavenPublication) {
+                artifact("$buildDir/outputs/aar/library-release.aar")
+                artifact javadocJar
+                artifact sourcesJar
+                groupId project.groupId
+                artifactId project.artifactId
+                version project.versionName
+
+                pom.withXml {
+                    def dependenciesNode = asNode().appendNode('dependencies')
+                    configurations.implementation.allDependencies.each {
+                        if (it.name != 'unspecified') {
+                            def dependencyNode = dependenciesNode.appendNode('dependency')
+                            dependencyNode.appendNode('groupId', it.group)
+                            dependencyNode.appendNode('artifactId', it.name)
+                            dependencyNode.appendNode('version', it.version)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+def configBintray() {
+    bintray {
+        user = project.bintrayUser
+        key = project.bintrayApiKey
+        publications = ['Production']
+        configurations = ['archives']
+        override = true
+        pkg {
+            repo = 'maven'
+            name = project.artifactId
+            description = project.desc
+            publish = true
+            publicDownloadNumbers = true
+            licenses = ['Apache-2.0']
+            vcsUrl = project.website
+            dryRun = false
+            version {
+                name = project.versionName
+                desc = "${project.desc} ${project.versionName}"
+                released = new Date()
+                vcsTag = project.versionName
+            }
+        }
+    }
+}

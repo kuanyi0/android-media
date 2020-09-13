@@ -1,4 +1,5 @@
 apply plugin: 'com.android.library'
+apply from: 'config.gradle'
 
 android {
     compileSdkVersion 30
@@ -7,8 +8,8 @@ android {
     defaultConfig {
         minSdkVersion 14
         targetSdkVersion 30
-        versionCode 1
-        versionName "1.0"
+        versionCode project.ext.versionCode
+        versionName project.ext.versionName
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
