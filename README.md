@@ -1,2 +1,1 @@
-# android-media
-Android media library.
+# Android Media Library
