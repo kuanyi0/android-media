@@ -1,0 +1,16 @@
+ext {
+    versionCode = getVersionCode()
+    versionName = getVersionName()
+}
+
+def getVersionCode() {
+    Integer code = majorVersion.toInteger() * 100 + minorVersion.toInteger() * 10 + patchVersion.toInteger()
+    println("version code: " + code)
+    return code
+}
+
+def getVersionName() {
+    String name = majorVersion + "." + minorVersion + "." + patchVersion
+    println("version name: " + name)
+    return name
+}
