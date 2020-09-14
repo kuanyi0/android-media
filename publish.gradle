@@ -59,7 +59,7 @@ def configSourcesAndJavadoc() {
 def configMaven() {
     publishing {
         publications {
-            Production(MavenPublication) {
+            production(MavenPublication) {
                 artifact("$buildDir/outputs/aar/library-release.aar")
                 artifact javadocJar
                 artifact sourcesJar
@@ -87,18 +87,18 @@ def configBintray() {
     bintray {
         user = project.bintrayUser
         key = project.bintrayApiKey
-        publications = ['Production']
-        configurations = ['archives']
-        override = true
+        publications = ['production']
+        dryRun = false
+        override = false
+        publish = true
         pkg {
             repo = 'maven'
             name = project.artifactId
-            description = project.desc
-            publish = true
+            desc = project.desc
             publicDownloadNumbers = true
             licenses = ['Apache-2.0']
+            website = project.website
             vcsUrl = project.website
-            dryRun = false
             version {
                 name = project.versionName
                 desc = "${project.desc} ${project.versionName}"
