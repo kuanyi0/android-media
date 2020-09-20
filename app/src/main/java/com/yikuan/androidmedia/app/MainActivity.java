@@ -17,6 +17,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mBinding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(mBinding.getRoot());
         mBinding.btnAudioRecord.setOnClickListener(this);
+        mBinding.btnVideoRecord.setOnClickListener(this);
     }
 
     @Override
@@ -24,6 +25,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         switch (v.getId()) {
             case R.id.btn_audio_record:
                 startActivity(new Intent(this, AudioRecordActivity.class));
+                break;
+            case R.id.btn_video_record:
+                startActivity(new Intent(this, VideoRecordActivity.class));
                 break;
             default:
                 break;
