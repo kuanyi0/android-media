@@ -1,3 +1,11 @@
 <resources>
     <string name="app_name">android-media</string>
+    <string name="start">start</string>
+    <string name="resume">resume</string>
+    <string name="pause">pause</string>
+    <string name="stop">stop</string>
+    <string name="audio_record">audio record</string>
+    <string name="audio_record_finish_title">Audio Record Finish</string>
+    <string name="output_file">Output path: %s</string>
+    <string name="open_finder">Open finder</string>
 </resources>

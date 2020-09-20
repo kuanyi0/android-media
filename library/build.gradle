@@ -6,7 +6,7 @@ android {
     buildToolsVersion "29.0.3"
 
     defaultConfig {
-        minSdkVersion 14
+        minSdkVersion 15
         targetSdkVersion 30
         versionCode project.ext.versionCode
         versionName project.ext.versionName
