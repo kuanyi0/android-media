@@ -9,4 +9,7 @@
     <string name="audio_record_finish_title">Audio Record Finish</string>
     <string name="output_file">Output path: %s</string>
     <string name="open_finder">Open finder</string>
+    <string name="audio_encode">audio encode</string>
+    <string name="video_encode">video encode</string>
+    <string name="select_file">select file</string>
 </resources>

@@ -1,28 +1,22 @@
 package com.yikuan.androidmedia.app;
 
-import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.media.projection.MediaProjectionManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 
-import com.yikuan.androidcommon.util.PermissionUtils;
-import com.yikuan.androidmedia.app.databinding.ActivityVideoRecordBinding;
-
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
+
+import com.yikuan.androidmedia.app.databinding.ActivityVideoRecordBinding;
 
 public class VideoRecordActivity extends AppCompatActivity implements View.OnClickListener {
     private static final String TAG = "VideoRecordActivity";
-    private static final String[] mPermissions = new String[]{Manifest.permission.RECORD_AUDIO, Manifest.permission.WRITE_EXTERNAL_STORAGE};
     private ActivityVideoRecordBinding mBinding;
     private Intent mMediaRecorderServiceIntent;
 
@@ -35,19 +29,6 @@ public class VideoRecordActivity extends AppCompatActivity implements View.OnCli
         mBinding.btnStart.setOnClickListener(this);
         mBinding.btnStop.setOnClickListener(this);
         mBinding.btnStop.setEnabled(false);
-        if (!PermissionUtils.isGranted(mPermissions)) {
-            ActivityCompat.requestPermissions(this, mPermissions, 0);
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        for (int result : grantResults) {
-            if (result != PackageManager.PERMISSION_GRANTED) {
-                finish();
-                return;
-            }
-        }
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
@@ -70,10 +51,10 @@ public class VideoRecordActivity extends AppCompatActivity implements View.OnCli
     protected void onActivityResult(int requestCode, final int resultCode, @Nullable final Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (resultCode == Activity.RESULT_OK && data != null) {
-            mMediaRecorderServiceIntent = new Intent(this, MediaRecorderService.class);
+            mMediaRecorderServiceIntent = new Intent(this, MediaRecordService.class);
             Log.d(TAG, "onActivityResult: " + resultCode + ", " + data);
-            mMediaRecorderServiceIntent.putExtra(MediaRecorderService.RESULT_CODE, resultCode);
-            mMediaRecorderServiceIntent.putExtra(MediaRecorderService.RESULT_DATA, data);
+            mMediaRecorderServiceIntent.putExtra(MediaRecordService.RESULT_CODE, resultCode);
+            mMediaRecorderServiceIntent.putExtra(MediaRecordService.RESULT_DATA, data);
             startForegroundService(mMediaRecorderServiceIntent);
         } else {
             finish();

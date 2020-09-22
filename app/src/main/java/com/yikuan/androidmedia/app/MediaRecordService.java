@@ -1,7 +1,6 @@
 package com.yikuan.androidmedia.app;
 
 import android.app.Notification;
-import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -11,6 +10,9 @@ import android.media.projection.MediaProjectionManager;
 import android.os.Build;
 import android.os.IBinder;
 import android.util.Log;
+
+import androidx.annotation.RequiresApi;
+import androidx.core.app.NotificationCompat;
 
 import com.yikuan.androidcommon.util.DateUtils;
 import com.yikuan.androidcommon.util.FileUtils;
@@ -23,18 +25,13 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Objects;
 
-import androidx.annotation.RequiresApi;
-import androidx.core.app.NotificationCompat;
-
-public class MediaRecorderService extends Service {
+public class MediaRecordService extends Service {
     public static final String RESULT_CODE = "resultCode";
     public static final String RESULT_DATA = "resultData";
     private static final String TAG = "MediaRecorderService";
-    private static final String DIR = "android-media/video-record";
     private MediaRecorderHelper mMediaRecorderHelper;
-    private File mDir;
 
-    public MediaRecorderService() {
+    public MediaRecordService() {
     }
 
     @Override
@@ -52,12 +49,6 @@ public class MediaRecorderService extends Service {
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        mDir = new File(PathUtils.getExternalStoragePath() + "/" + DIR);
-        try {
-            FileUtils.forceMkdir(mDir);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
         MediaProjectionManager mediaProjectionManager = (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
         MediaProjection mediaProjection = mediaProjectionManager.getMediaProjection(intent.getIntExtra(RESULT_CODE, 0),
                 (Intent) Objects.requireNonNull(intent.getParcelableExtra(RESULT_DATA)));
@@ -73,7 +64,7 @@ public class MediaRecorderService extends Service {
         MediaRecorderHelper.MediaParam mediaParam = new MediaRecorderHelper.MediaParam(MediaRecorder.AudioSource.MIC,
                 MediaRecorder.VideoSource.SURFACE, MediaRecorder.AudioEncoder.AAC, MediaRecorder.VideoEncoder.H264,
                 ScreenUtils.getScreenWidth(), ScreenUtils.getScreenHeight(), MediaRecorder.OutputFormat.MPEG_4,
-                mDir.getAbsolutePath() + "/" + DateUtils.formatTimeFileName() + ".mp4");
+                Constant.DIR_VIDEO_RECORD + "/" + DateUtils.formatTimeFileName() + ".mp4");
         mMediaRecorderHelper = new MediaRecorderHelper();
         mMediaRecorderHelper.configure(projectionParam, mediaParam);
         mMediaRecorderHelper.setCallback(new MediaRecorderHelper.Callback() {
