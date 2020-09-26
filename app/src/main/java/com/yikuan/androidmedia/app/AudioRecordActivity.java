@@ -118,8 +118,7 @@ public class AudioRecordActivity extends AppCompatActivity implements View.OnCli
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        Uri uri = data.getData();
-        Log.d(TAG, "select file: " + uri);
+        Log.d(TAG, "onActivityResult: " + data);
     }
 
     @Override

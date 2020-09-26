@@ -28,6 +28,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setContentView(mBinding.getRoot());
         mBinding.btnAudioRecord.setOnClickListener(this);
         mBinding.btnVideoRecord.setOnClickListener(this);
+        mBinding.btnAudioEncode.setOnClickListener(this);
+        mBinding.btnVideoEncode.setOnClickListener(this);
         if (!PermissionUtils.isGranted(mPermissions)) {
             ActivityCompat.requestPermissions(this, mPermissions, 0);
         } else {

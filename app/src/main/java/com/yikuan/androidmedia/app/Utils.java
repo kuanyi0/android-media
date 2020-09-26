@@ -37,6 +37,7 @@ public class Utils {
         } else {
             uri = Uri.fromFile(dir);
         }
+        Log.d(TAG, "dir: " + uri);
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setDataAndType(uri, "*/*");

@@ -34,7 +34,7 @@ public class AudioEncoder {
             return;
         }
         MediaFormat mediaFormat = new MediaFormat();
-        mMediaCodec.configure(mediaFormat, null, null, 0);
+        mMediaCodec.configure(mediaFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
         mState = State.CONFIGURED;
     }
 
