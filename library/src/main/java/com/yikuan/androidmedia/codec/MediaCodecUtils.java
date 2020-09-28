@@ -19,25 +19,45 @@ import java.util.List;
  */
 public class MediaCodecUtils {
 
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     public static List<MediaCodecInfo> getEncoders() {
         List<MediaCodecInfo> encoders = new ArrayList<>();
-        MediaCodecList list = new MediaCodecList(MediaCodecList.REGULAR_CODECS);
-        for (MediaCodecInfo info : list.getCodecInfos()) {
-            if (info.isEncoder()) {
-                encoders.add(info);
+        MediaCodecList list;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+            list = new MediaCodecList(MediaCodecList.REGULAR_CODECS);
+            for (MediaCodecInfo info : list.getCodecInfos()) {
+                if (info.isEncoder()) {
+                    encoders.add(info);
+                }
+            }
+        } else {
+            int count = MediaCodecList.getCodecCount();
+            for (int i = 0; i < count; i++) {
+                MediaCodecInfo info = MediaCodecList.getCodecInfoAt(i);
+                if (info.isEncoder()) {
+                    encoders.add(info);
+                }
             }
         }
         return encoders;
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     public static List<MediaCodecInfo> getDecoders() {
         List<MediaCodecInfo> decoders = new ArrayList<>();
-        MediaCodecList list = new MediaCodecList(MediaCodecList.REGULAR_CODECS);
-        for (MediaCodecInfo info : list.getCodecInfos()) {
-            if (!info.isEncoder()) {
-                decoders.add(info);
+        MediaCodecList list;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+            list = new MediaCodecList(MediaCodecList.REGULAR_CODECS);
+            for (MediaCodecInfo info : list.getCodecInfos()) {
+                if (!info.isEncoder()) {
+                    decoders.add(info);
+                }
+            }
+        } else {
+            int count = MediaCodecList.getCodecCount();
+            for (int i = 0; i < count; i++) {
+                MediaCodecInfo info = MediaCodecList.getCodecInfoAt(i);
+                if (!info.isEncoder()) {
+                    decoders.add(info);
+                }
             }
         }
         return decoders;
@@ -61,7 +81,7 @@ public class MediaCodecUtils {
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-    public String findEncoderByFormat(MediaFormat format) {
+    public static String findEncoderByFormat(MediaFormat format) {
         String mime = format.getString(MediaFormat.KEY_MIME);
         for (MediaCodecInfo info : getEncoders()) {
             MediaCodecInfo.CodecCapabilities caps = info.getCapabilitiesForType(mime);
@@ -73,7 +93,7 @@ public class MediaCodecUtils {
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-    public String findDecoderByFormat(MediaFormat format) {
+    public static String findDecoderByFormat(MediaFormat format) {
         String mime = format.getString(MediaFormat.KEY_MIME);
         for (MediaCodecInfo info : getDecoders()) {
             MediaCodecInfo.CodecCapabilities caps = info.getCapabilitiesForType(mime);
@@ -84,11 +104,10 @@ public class MediaCodecUtils {
         return null;
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-    public String findEncoderByType(String type) {
+    public static String findEncoderByType(String mimeType) {
         for (MediaCodecInfo info : getEncoders()) {
             for (String t : info.getSupportedTypes()) {
-                if (t.equalsIgnoreCase(type)) {
+                if (t.equalsIgnoreCase(mimeType)) {
                     return info.getName();
                 }
             }
@@ -96,11 +115,10 @@ public class MediaCodecUtils {
         return null;
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-    public String findDecoderByType(String type) {
+    public static String findDecoderByType(String mimeType) {
         for (MediaCodecInfo info : getDecoders()) {
             for (String t : info.getSupportedTypes()) {
-                if (t.equalsIgnoreCase(type)) {
+                if (t.equalsIgnoreCase(mimeType)) {
                     return info.getName();
                 }
             }

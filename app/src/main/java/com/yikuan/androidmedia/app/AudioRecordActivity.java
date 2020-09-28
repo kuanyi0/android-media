@@ -124,8 +124,6 @@ public class AudioRecordActivity extends AppCompatActivity implements View.OnCli
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (mAudioRecorder != null) {
-            mAudioRecorder.release();
-        }
+        mAudioRecorder.release();
     }
 }

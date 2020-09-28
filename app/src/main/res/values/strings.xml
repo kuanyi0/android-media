@@ -12,4 +12,5 @@
     <string name="audio_encode">audio encode</string>
     <string name="video_encode">video encode</string>
     <string name="select_file">select file</string>
+    <string name="encode_finish">Encode finish</string>
 </resources>

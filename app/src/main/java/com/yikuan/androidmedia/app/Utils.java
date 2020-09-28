@@ -1,10 +1,13 @@
 package com.yikuan.androidmedia.app;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Environment;
+import android.provider.DocumentsContract;
 import android.util.Log;
 
 import androidx.core.content.FileProvider;
@@ -46,5 +49,12 @@ public class Utils {
         } catch (ActivityNotFoundException e) {
             Log.e(TAG, "select file error");
         }
+    }
+
+    @SuppressLint("NewApi")
+    public static String getPathFromUri(Uri uri) {
+        String documentId = DocumentsContract.getDocumentId(uri);
+        String[] split = documentId.split(":");
+        return Environment.getExternalStorageDirectory() + "/" + split[1];
     }
 }
