@@ -1,15 +1,16 @@
 package com.yikuan.androidmedia.record;
 
 import android.hardware.display.DisplayManager;
+import android.hardware.display.VirtualDisplay;
 import android.media.MediaRecorder;
 import android.media.projection.MediaProjection;
 import android.os.Build;
 
+import androidx.annotation.RequiresApi;
+
 import com.yikuan.androidmedia.base.State;
 
 import java.io.IOException;
-
-import androidx.annotation.RequiresApi;
 
 /**
  * @author yikuan
@@ -18,6 +19,8 @@ import androidx.annotation.RequiresApi;
 public class MediaRecorderHelper {
     private static final String TAG = "MediaRecorderHelper";
     private MediaRecorder mMediaRecorder;
+    private MediaProjection mMediaProjection;
+    private VirtualDisplay mVirtualDisplay;
     private Callback mCallback;
     private State mState = State.UNINITIALIZED;
 
@@ -36,8 +39,9 @@ public class MediaRecorderHelper {
         mMediaRecorder.setOutputFile(mediaParam.output);
         try {
             mMediaRecorder.prepare();
-            projectionParam.projection.createVirtualDisplay(TAG, projectionParam.width, projectionParam.height, projectionParam.dpi,
-                    DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC, mMediaRecorder.getSurface(), null, null);
+            mMediaProjection = projectionParam.projection;
+            mVirtualDisplay = mMediaProjection.createVirtualDisplay(TAG, projectionParam.width, projectionParam.height,
+                    projectionParam.dpi, DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC, mMediaRecorder.getSurface(), null, null);
             mState = State.CONFIGURED;
         } catch (IOException e) {
             e.printStackTrace();
@@ -65,12 +69,17 @@ public class MediaRecorderHelper {
         mState = State.STOPPED;
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     public void release() {
-        if (mState == State.UNINITIALIZED) {
+        if (mState == State.UNINITIALIZED || mState == State.RELEASED) {
             return;
         }
         mMediaRecorder.release();
         mMediaRecorder = null;
+        mVirtualDisplay.release();
+        mVirtualDisplay = null;
+        mMediaProjection.stop();
+        mMediaProjection = null;
         mState = State.RELEASED;
     }
 

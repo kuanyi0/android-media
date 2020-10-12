@@ -15,14 +15,10 @@ import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationCompat;
 
 import com.yikuan.androidcommon.util.DateUtils;
-import com.yikuan.androidcommon.util.FileUtils;
-import com.yikuan.androidcommon.util.PathUtils;
 import com.yikuan.androidcommon.util.ScreenUtils;
 import com.yikuan.androidmedia.base.State;
 import com.yikuan.androidmedia.record.MediaRecorderHelper;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.Objects;
 
 public class MediaRecordService extends Service {
@@ -80,6 +76,7 @@ public class MediaRecordService extends Service {
         }
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     public void onDestroy() {
         super.onDestroy();
