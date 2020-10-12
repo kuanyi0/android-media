@@ -1,4 +1,4 @@
-package com.yikuan.androidmedia.codec;
+package com.yikuan.androidmedia.util;
 
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecList;

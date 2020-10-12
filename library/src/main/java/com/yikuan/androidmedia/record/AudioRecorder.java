@@ -67,7 +67,7 @@ public class AudioRecorder {
     }
 
     public void release() {
-        if (mState == State.UNINITIALIZED) {
+        if (mState == State.UNINITIALIZED || mState == State.RELEASED) {
             return;
         }
         mAudioRecord.release();

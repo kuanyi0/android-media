@@ -17,7 +17,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.yikuan.androidcommon.util.ThreadPoolManager;
 import com.yikuan.androidmedia.app.databinding.ActivityAudioEncodeBinding;
-import com.yikuan.androidmedia.codec.MediaCodecUtils;
+import com.yikuan.androidmedia.util.MediaCodecUtils;
 import com.yikuan.androidmedia.encode.AudioEncoder;
 
 import java.io.File;

@@ -12,7 +12,7 @@ import java.nio.ByteBuffer;
  * @date 2020/09/21
  */
 public class AudioEncoder {
-    public static int MAX_INPUT_SIZE = 1024 * 8;
+    public static int MAX_INPUT_SIZE = 8 * 1024;
     private MediaCodec mMediaCodec;
     private Param mParam;
     private ByteBuffer[] mInputBuffers;
@@ -22,6 +22,9 @@ public class AudioEncoder {
     private Callback mCallback;
 
     public void configure(Param param) {
+        if (mState != State.UNINITIALIZED) {
+            return;
+        }
         try {
             mMediaCodec = MediaCodec.createEncoderByType(param.type);
         } catch (IOException e) {
@@ -103,11 +106,12 @@ public class AudioEncoder {
     }
 
     public void release() {
-        if (mState == State.UNINITIALIZED) {
+        if (mState == State.UNINITIALIZED || mState == State.RELEASED) {
             return;
         }
         mMediaCodec.release();
         mMediaCodec = null;
+        mState = State.RELEASED;
     }
 
     public State getState() {
