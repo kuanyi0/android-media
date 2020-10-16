@@ -3,13 +3,13 @@ package com.yikuan.androidmedia.encode;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
 
-import com.yikuan.androidmedia.base.SyncCodec;
+import com.yikuan.androidmedia.base.AsyncCodec;
 
 /**
  * @author yikuan
  * @date 2020/09/21
  */
-public class AudioEncoder extends SyncCodec<AudioParam> {
+public class AudioEncoder2 extends AsyncCodec<AudioParam> {
     public static int MAX_INPUT_SIZE = 4 * 1024;
 
     @Override

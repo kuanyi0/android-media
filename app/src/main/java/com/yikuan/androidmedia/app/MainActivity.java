@@ -13,6 +13,10 @@ import androidx.core.app.ActivityCompat;
 import com.yikuan.androidcommon.util.FileUtils;
 import com.yikuan.androidcommon.util.PermissionUtils;
 import com.yikuan.androidmedia.app.databinding.ActivityMainBinding;
+import com.yikuan.androidmedia.app.encode.AudioEncodeActivity;
+import com.yikuan.androidmedia.app.encode.VideoEncodeActivity;
+import com.yikuan.androidmedia.app.record.AudioRecordActivity;
+import com.yikuan.androidmedia.app.record.VideoRecordActivity;
 
 import java.io.File;
 import java.io.IOException;

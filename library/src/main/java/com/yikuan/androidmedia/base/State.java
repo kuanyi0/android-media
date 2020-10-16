@@ -8,6 +8,7 @@ public enum State {
     UNINITIALIZED,
     CONFIGURED,
     RUNNING,
+    STOPPING,
     STOPPED,
     RELEASED
 }

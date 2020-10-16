@@ -1,7 +1,7 @@
-package com.yikuan.androidmedia.app;
+package com.yikuan.androidmedia.app.encode;
 
-import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
 import android.net.Uri;
@@ -11,14 +11,20 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.yikuan.androidcommon.util.ThreadPoolManager;
+import com.yikuan.androidmedia.app.Constant;
+import com.yikuan.androidmedia.app.R;
+import com.yikuan.androidmedia.app.Utils;
 import com.yikuan.androidmedia.app.databinding.ActivityAudioEncodeBinding;
-import com.yikuan.androidmedia.util.MediaCodecUtils;
 import com.yikuan.androidmedia.encode.AudioEncoder;
+import com.yikuan.androidmedia.encode.AudioEncoder2;
+import com.yikuan.androidmedia.encode.AudioParam;
+import com.yikuan.androidmedia.util.MediaCodecUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -28,10 +34,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class AudioEncodeActivity extends AppCompatActivity implements View.OnClickListener {
     private static final String TAG = "AudioEncodeActivity";
+    private static final boolean ASYNC_MODE = true;
     private ActivityAudioEncodeBinding mBinding;
     private AudioEncoder mAudioEncoder;
+    private AudioEncoder2 mAudioEncoder2;
+    private AudioParam mParam = new AudioParam(MediaFormat.MIMETYPE_AUDIO_AAC, 44100, 1, 96000);
     private File mSourceFile;
 
     @Override
@@ -41,7 +51,11 @@ public class AudioEncodeActivity extends AppCompatActivity implements View.OnCli
         setContentView(mBinding.getRoot());
         setTitle(R.string.audio_encode);
         initView();
-        initEncoder();
+        if (ASYNC_MODE) {
+            initEncoder();
+        } else {
+            initEncoder2();
+        }
         initSource();
     }
 
@@ -60,8 +74,7 @@ public class AudioEncodeActivity extends AppCompatActivity implements View.OnCli
 
     private void initEncoder() {
         mAudioEncoder = new AudioEncoder();
-        @SuppressLint("InlinedApi") AudioEncoder.Param param = new AudioEncoder.Param(MediaFormat.MIMETYPE_AUDIO_AAC, 44100, 1, 96000);
-        mAudioEncoder.configure(param);
+        mAudioEncoder.configure(mParam);
         mAudioEncoder.setCallback(new AudioEncoder.Callback() {
             @Override
             public void onOutputFormatChanged(MediaFormat format) {
@@ -73,6 +86,32 @@ public class AudioEncodeActivity extends AppCompatActivity implements View.OnCli
                 Log.d(TAG, "onOutputAvailable: " + Arrays.toString(output));
             }
         });
+    }
+
+    private void initEncoder2() {
+        mAudioEncoder2 = new AudioEncoder2();
+        mAudioEncoder2.setCallback(new MediaCodec.Callback() {
+            @Override
+            public void onInputBufferAvailable(@NonNull MediaCodec codec, int index) {
+                Log.d(TAG, "onInputBufferAvailable: ");
+            }
+
+            @Override
+            public void onOutputBufferAvailable(@NonNull MediaCodec codec, int index, @NonNull MediaCodec.BufferInfo info) {
+                Log.d(TAG, "onOutputBufferAvailable: ");
+            }
+
+            @Override
+            public void onError(@NonNull MediaCodec codec, @NonNull MediaCodec.CodecException e) {
+                Log.d(TAG, "onError: ");
+            }
+
+            @Override
+            public void onOutputFormatChanged(@NonNull MediaCodec codec, @NonNull MediaFormat format) {
+                Log.d(TAG, "onOutputFormatChanged: ");
+            }
+        });
+        mAudioEncoder2.configure(mParam);
     }
 
     private void initSource() {
@@ -105,7 +144,6 @@ public class AudioEncodeActivity extends AppCompatActivity implements View.OnCli
         Utils.selectFile(this, Constant.DIR_AUDIO_ENCODE);
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -123,26 +161,27 @@ public class AudioEncodeActivity extends AppCompatActivity implements View.OnCli
         if (mSourceFile == null) {
             return;
         }
-        mAudioEncoder.start();
-        try {
-            final FileInputStream inputStream = new FileInputStream(mSourceFile);
+        if (mAudioEncoder != null) {
+            mAudioEncoder.start();
             ThreadPoolManager.getInstance().execute(new Runnable() {
                 byte[] data = new byte[AudioEncoder.MAX_INPUT_SIZE];
+
                 @Override
                 public void run() {
+                    final FileInputStream inputStream;
+                    try {
+                        inputStream = new FileInputStream(mSourceFile);
+                    } catch (FileNotFoundException ex) {
+                        ex.printStackTrace();
+                        return;
+                    }
                     while (true) {
                         try {
                             int length = inputStream.read(data);
                             if (length > 0) {
-                                mAudioEncoder.encode(data);
+                                mAudioEncoder.write(data);
                             } else {
-                                runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        Toast.makeText(AudioEncodeActivity.this, R.string.encode_finish, Toast.LENGTH_SHORT).show();
-                                        stop();
-                                    }
-                                });
+                                encodeFinish();
                                 break;
                             }
                         } catch (IOException e) {
@@ -151,16 +190,29 @@ public class AudioEncodeActivity extends AppCompatActivity implements View.OnCli
                     }
                 }
             });
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            return;
+        } else {
+            mAudioEncoder2.start();
         }
         mBinding.btnStart.setEnabled(false);
         mBinding.btnStop.setEnabled(true);
     }
 
+    private void encodeFinish() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(AudioEncodeActivity.this, R.string.encode_finish, Toast.LENGTH_SHORT).show();
+                stop();
+            }
+        });
+    }
+
     private void stop() {
-        mAudioEncoder.stop();
+        if (mAudioEncoder != null) {
+            mAudioEncoder.stop();
+        } else {
+            mAudioEncoder2.stop();
+        }
         mBinding.btnStart.setEnabled(true);
         mBinding.btnStop.setEnabled(false);
     }
@@ -168,6 +220,10 @@ public class AudioEncodeActivity extends AppCompatActivity implements View.OnCli
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        mAudioEncoder.release();
+        if (mAudioEncoder != null) {
+            mAudioEncoder.release();
+        } else {
+            mAudioEncoder2.release();
+        }
     }
 }

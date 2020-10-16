@@ -1,4 +1,4 @@
-package com.yikuan.androidmedia.app;
+package com.yikuan.androidmedia.app.encode;
 
 import android.app.Activity;
 import android.content.Context;
@@ -12,6 +12,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.yikuan.androidmedia.app.R;
 import com.yikuan.androidmedia.app.databinding.ActivityVideoEncodeBinding;
 
 public class VideoEncodeActivity extends AppCompatActivity implements View.OnClickListener {

@@ -17,10 +17,10 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         tools:targetApi="q">
-        <activity android:name=".VideoEncodeActivity" />
-        <activity android:name=".AudioEncodeActivity" />
-        <activity android:name=".VideoRecordActivity" />
-        <activity android:name=".AudioRecordActivity" />
+        <activity android:name=".encode.VideoEncodeActivity" />
+        <activity android:name=".encode.AudioEncodeActivity" />
+        <activity android:name=".record.VideoRecordActivity" />
+        <activity android:name=".record.AudioRecordActivity" />
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -40,12 +40,12 @@
         </provider>
 
         <service
-            android:name=".MediaRecordService"
+            android:name=".record.MediaRecordService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="mediaProjection" />
         <service
-            android:name=".VideoEncodeService"
+            android:name=".encode.VideoEncodeService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="mediaProjection" />

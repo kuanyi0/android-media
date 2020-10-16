@@ -1,10 +1,9 @@
-package com.yikuan.androidmedia.app;
+package com.yikuan.androidmedia.app.record;
 
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.media.AudioFormat;
 import android.media.MediaRecorder;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -16,6 +15,9 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.yikuan.androidcommon.util.DateUtils;
+import com.yikuan.androidmedia.app.Constant;
+import com.yikuan.androidmedia.app.R;
+import com.yikuan.androidmedia.app.Utils;
 import com.yikuan.androidmedia.app.databinding.ActivityAudioRecordBinding;
 import com.yikuan.androidmedia.record.AudioRecorder;
 

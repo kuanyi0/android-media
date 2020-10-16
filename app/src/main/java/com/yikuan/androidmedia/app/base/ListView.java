@@ -1,4 +1,4 @@
-package com.yikuan.androidmedia.app;
+package com.yikuan.androidmedia.app.base;
 
 import android.content.Context;
 import android.util.AttributeSet;
@@ -8,6 +8,8 @@ import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.yikuan.androidmedia.app.base.ListAdapter;
 
 import java.util.List;
 

@@ -5,13 +5,13 @@ import android.os.Build;
 
 import androidx.annotation.RequiresApi;
 
-import com.yikuan.androidmedia.base.SyncCodec;
+import com.yikuan.androidmedia.base.AsyncCodec;
 
 /**
  * @author yikuan
- * @date 2020/10/12
+ * @date 2020/09/21
  */
-public class VideoEncoder extends SyncCodec<VideoParam> {
+public class VideoEncoder2 extends AsyncCodec<VideoParam> {
 
     @Override
     protected boolean isEncoder() {
