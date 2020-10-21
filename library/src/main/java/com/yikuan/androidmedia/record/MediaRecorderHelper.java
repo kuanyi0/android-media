@@ -9,6 +9,7 @@ import android.os.Build;
 import androidx.annotation.RequiresApi;
 
 import com.yikuan.androidmedia.base.State;
+import com.yikuan.androidmedia.base.Worker2;
 
 import java.io.IOException;
 
@@ -16,13 +17,12 @@ import java.io.IOException;
  * @author yikuan
  * @date 2020/09/20
  */
-public class MediaRecorderHelper {
+public class MediaRecorderHelper extends Worker2<MediaRecorderHelper.ProjectionParam, MediaRecorderHelper.MediaParam> {
     private static final String TAG = "MediaRecorderHelper";
     private MediaRecorder mMediaRecorder;
     private MediaProjection mMediaProjection;
     private VirtualDisplay mVirtualDisplay;
     private Callback mCallback;
-    private State mState = State.UNINITIALIZED;
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     public void configure(ProjectionParam projectionParam, MediaParam mediaParam) {
@@ -70,12 +70,6 @@ public class MediaRecorderHelper {
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-    public void reset() {
-        release();
-        mState = State.UNINITIALIZED;
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     public void release() {
         if (mState == State.UNINITIALIZED || mState == State.RELEASED) {
             return;
@@ -87,10 +81,6 @@ public class MediaRecorderHelper {
         mMediaProjection.stop();
         mMediaProjection = null;
         mState = State.RELEASED;
-    }
-
-    public State getState() {
-        return mState;
     }
 
     public static class ProjectionParam {

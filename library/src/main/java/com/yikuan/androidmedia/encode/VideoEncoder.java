@@ -5,7 +5,7 @@ import android.os.Build;
 
 import androidx.annotation.RequiresApi;
 
-import com.yikuan.androidmedia.base.SyncCodec;
+import com.yikuan.androidmedia.codec.SyncCodec;
 
 /**
  * @author yikuan

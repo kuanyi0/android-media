@@ -1,8 +1,9 @@
-package com.yikuan.androidmedia.base;
+package com.yikuan.androidmedia.codec;
 
 import android.media.MediaCodec;
 import android.media.MediaFormat;
-import android.util.Log;
+
+import com.yikuan.androidmedia.base.State;
 
 import java.nio.ByteBuffer;
 
@@ -10,7 +11,7 @@ import java.nio.ByteBuffer;
  * @author yikuan
  * @date 2020/10/12
  */
-public abstract class SyncCodec<T extends CodecParam> extends BaseCodec<T> {
+public abstract class SyncCodec<T extends BaseCodec.Param> extends BaseCodec<T> {
     private ByteBuffer[] mInputBuffers;
     private ByteBuffer[] mOutputBuffers;
     private MediaCodec.BufferInfo mOutputBufferInfo = new MediaCodec.BufferInfo();

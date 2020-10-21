@@ -15,7 +15,6 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.yikuan.androidmedia.app.R;
 import com.yikuan.androidmedia.app.databinding.ActivityVideoRecordBinding;
-import com.yikuan.androidmedia.app.record.MediaRecordService;
 
 public class VideoRecordActivity extends AppCompatActivity implements View.OnClickListener {
     private static final String TAG = "VideoRecordActivity";

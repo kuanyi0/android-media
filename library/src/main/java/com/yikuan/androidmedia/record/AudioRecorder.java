@@ -4,6 +4,7 @@ import android.media.AudioFormat;
 import android.media.AudioRecord;
 
 import com.yikuan.androidmedia.base.State;
+import com.yikuan.androidmedia.base.Worker1;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -12,20 +13,20 @@ import java.util.concurrent.Executors;
  * @author yikuan
  * @date 2020/09/17
  */
-public class AudioRecorder {
+public class AudioRecorder extends Worker1<AudioRecorder.Param> {
     private AudioRecord mAudioRecord;
-    private State mState = State.UNINITIALIZED;
     private byte[] mAudioData;
     private ExecutorService mExecutorService;
     private Runnable mRecordRunnable;
     private Callback mCallback;
 
-    public void configure(AudioParams audioParams) {
+    @Override
+    public void configure(Param param) {
         if (mState != State.UNINITIALIZED) {
             return;
         }
-        int bufferSizeInBytes = AudioRecord.getMinBufferSize(audioParams.sampleRateInHz, audioParams.channelConfig, audioParams.audioFormat);
-        mAudioRecord = new AudioRecord(audioParams.audioSource, audioParams.sampleRateInHz, audioParams.channelConfig, audioParams.audioFormat, bufferSizeInBytes);
+        int bufferSizeInBytes = AudioRecord.getMinBufferSize(param.sampleRateInHz, param.channelConfig, param.audioFormat);
+        mAudioRecord = new AudioRecord(param.audioSource, param.sampleRateInHz, param.channelConfig, param.audioFormat, bufferSizeInBytes);
         mAudioData = new byte[bufferSizeInBytes];
         mState = State.CONFIGURED;
     }
@@ -34,6 +35,7 @@ public class AudioRecorder {
         mCallback = callback;
     }
 
+    @Override
     public void start() {
         if (mState != State.CONFIGURED) {
             return;
@@ -49,6 +51,7 @@ public class AudioRecorder {
         mExecutorService.execute(mRecordRunnable);
     }
 
+    @Override
     public void stop() {
         if (mState != State.RUNNING) {
             return;
@@ -57,11 +60,7 @@ public class AudioRecorder {
         mState = State.STOPPED;
     }
 
-    public void reset() {
-        release();
-        mState = State.UNINITIALIZED;
-    }
-
+    @Override
     public void release() {
         if (mState == State.UNINITIALIZED || mState == State.RELEASED) {
             return;
@@ -69,10 +68,6 @@ public class AudioRecorder {
         mAudioRecord.release();
         mAudioRecord = null;
         mState = State.RELEASED;
-    }
-
-    public State getState() {
-        return mState;
     }
 
     private class RecordRunnable implements Runnable {
@@ -89,7 +84,7 @@ public class AudioRecorder {
         }
     }
 
-    public static class AudioParams {
+    public static class Param {
         /**
          * 音频源
          *
@@ -121,7 +116,7 @@ public class AudioRecorder {
          */
         private int audioFormat;
 
-        public AudioParams(int audioSource, int sampleRateInHz, int channelConfig, int audioFormat) {
+        public Param(int audioSource, int sampleRateInHz, int channelConfig, int audioFormat) {
             this.audioSource = audioSource;
             this.sampleRateInHz = sampleRateInHz;
             this.channelConfig = channelConfig;

@@ -3,7 +3,7 @@ package com.yikuan.androidmedia.encode;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
 
-import com.yikuan.androidmedia.base.AsyncCodec;
+import com.yikuan.androidmedia.codec.AsyncCodec;
 
 /**
  * @author yikuan

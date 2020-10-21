@@ -1,12 +1,12 @@
 package com.yikuan.androidmedia.encode;
 
-import com.yikuan.androidmedia.base.CodecParam;
+import com.yikuan.androidmedia.codec.BaseCodec;
 
 /**
  * @author yikuan
  * @date 2020/10/12
  */
-public class VideoParam extends CodecParam {
+public class VideoParam extends BaseCodec.Param {
     /**
      * 视频宽度
      */

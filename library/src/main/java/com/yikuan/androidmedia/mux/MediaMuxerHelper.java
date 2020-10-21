@@ -8,6 +8,7 @@ import android.os.Build;
 import androidx.annotation.RequiresApi;
 
 import com.yikuan.androidmedia.base.State;
+import com.yikuan.androidmedia.base.Worker1;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -16,11 +17,11 @@ import java.nio.ByteBuffer;
  * @author yikuan
  * @date 2020/10/21
  */
-class MediaMuxerHelper {
+public class MediaMuxerHelper extends Worker1<MediaMuxerHelper.Param> {
     private MediaMuxer mMediaMuxer;
-    private State mState = State.UNINITIALIZED;
 
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
+    @Override
     public void configure(Param param) {
         if (mState != State.UNINITIALIZED) {
             return;
@@ -43,6 +44,7 @@ class MediaMuxerHelper {
     }
 
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
+    @Override
     public void start() {
         if (mState != State.CONFIGURED) {
             return;
@@ -60,6 +62,7 @@ class MediaMuxerHelper {
     }
 
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
+    @Override
     public void stop() {
         if (mState != State.RUNNING) {
             return;
@@ -69,12 +72,7 @@ class MediaMuxerHelper {
     }
 
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
-    public void reset() {
-        release();
-        mState = State.UNINITIALIZED;
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
+    @Override
     public void release() {
         if (mState == State.UNINITIALIZED || mState == State.RELEASED) {
             return;
@@ -82,10 +80,6 @@ class MediaMuxerHelper {
         mMediaMuxer.release();
         mMediaMuxer = null;
         mState = State.RELEASED;
-    }
-
-    public State getState() {
-        return mState;
     }
 
     public static class Param {

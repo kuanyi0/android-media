@@ -16,7 +16,7 @@ import com.yikuan.androidcommon.util.ScreenUtils;
 import com.yikuan.androidcommon.util.ThreadPoolManager;
 import com.yikuan.androidmedia.app.base.MediaProjectionService;
 import com.yikuan.androidmedia.base.State;
-import com.yikuan.androidmedia.base.SyncCodec;
+import com.yikuan.androidmedia.codec.SyncCodec;
 import com.yikuan.androidmedia.encode.VideoEncoder;
 import com.yikuan.androidmedia.encode.VideoEncoder2;
 import com.yikuan.androidmedia.encode.VideoParam;

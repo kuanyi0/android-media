@@ -1,4 +1,4 @@
-package com.yikuan.androidmedia.base;
+package com.yikuan.androidmedia.codec;
 
 import android.media.MediaCodec;
 import android.media.MediaFormat;
@@ -7,17 +7,20 @@ import android.view.Surface;
 
 import androidx.annotation.RequiresApi;
 
+import com.yikuan.androidmedia.base.State;
+import com.yikuan.androidmedia.base.Worker1;
+
 import java.io.IOException;
 
 /**
  * @author yikuan
  * @date 2020/10/12
  */
-public abstract class BaseCodec<T extends CodecParam> {
+public abstract class BaseCodec<T extends BaseCodec.Param> extends Worker1<T> {
     protected MediaCodec mMediaCodec;
     protected T mParam;
-    protected volatile State mState = State.UNINITIALIZED;
 
+    @Override
     public void configure(T param) {
         if (mState != State.UNINITIALIZED) {
             return;
@@ -42,6 +45,7 @@ public abstract class BaseCodec<T extends CodecParam> {
         mMediaCodec.configure(configureMediaFormat(), null, null, isEncoder() ? MediaCodec.CONFIGURE_FLAG_ENCODE : 0);
     }
 
+    @Override
     public void start() {
         if (mState != State.CONFIGURED && mState != State.STOPPED) {
             return;
@@ -61,6 +65,7 @@ public abstract class BaseCodec<T extends CodecParam> {
         return mMediaCodec.createInputSurface();
     }
 
+    @Override
     public void stop() {
         if (mState != State.RUNNING) {
             return;
@@ -70,11 +75,7 @@ public abstract class BaseCodec<T extends CodecParam> {
         mState = State.STOPPED;
     }
 
-    public void reset() {
-        release();
-        mState = State.UNINITIALIZED;
-    }
-
+    @Override
     public void release() {
         if (mState == State.UNINITIALIZED || mState == State.RELEASED) {
             return;
@@ -82,10 +83,6 @@ public abstract class BaseCodec<T extends CodecParam> {
         mMediaCodec.release();
         mMediaCodec = null;
         mState = State.RELEASED;
-    }
-
-    public State getState() {
-        return mState;
     }
 
     /**
@@ -104,4 +101,14 @@ public abstract class BaseCodec<T extends CodecParam> {
      * @return MediaFormat
      */
     protected abstract MediaFormat configureMediaFormat();
+
+    public abstract static class Param {
+        /**
+         * MIME类型
+         *
+         * @see MediaFormat#MIMETYPE_AUDIO_AAC
+         * @see MediaFormat#MIMETYPE_VIDEO_AVC
+         */
+        public String type;
+    }
 }

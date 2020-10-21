@@ -46,9 +46,9 @@ public class AudioRecordActivity extends AppCompatActivity implements View.OnCli
     }
 
     private void initialize() {
-        AudioRecorder.AudioParams audioParams = new AudioRecorder.AudioParams(MediaRecorder.AudioSource.MIC, 44100, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
+        AudioRecorder.Param param = new AudioRecorder.Param(MediaRecorder.AudioSource.MIC, 44100, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
         mAudioRecorder = new AudioRecorder();
-        mAudioRecorder.configure(audioParams);
+        mAudioRecorder.configure(param);
     }
 
     @Override

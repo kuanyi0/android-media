@@ -1,4 +1,4 @@
-package com.yikuan.androidmedia.base;
+package com.yikuan.androidmedia.codec;
 
 import android.media.MediaCodec;
 import android.os.Build;
@@ -9,7 +9,7 @@ import androidx.annotation.RequiresApi;
  * @author yikuan
  * @date 2020/10/12
  */
-public abstract class AsyncCodec<T extends CodecParam> extends BaseCodec<T> {
+public abstract class AsyncCodec<T extends BaseCodec.Param> extends BaseCodec<T> {
     private MediaCodec.Callback mCodecCallback;
 
     public void setCallback(MediaCodec.Callback callback) {
