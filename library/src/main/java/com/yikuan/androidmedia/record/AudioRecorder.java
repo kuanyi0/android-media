@@ -58,11 +58,7 @@ public class AudioRecorder {
     }
 
     public void reset() {
-        if (mState == State.UNINITIALIZED || mState == State.RELEASED) {
-            return;
-        }
-        mAudioRecord.release();
-        mAudioRecord = null;
+        release();
         mState = State.UNINITIALIZED;
     }
 

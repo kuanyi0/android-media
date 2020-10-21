@@ -70,6 +70,12 @@ public class MediaRecorderHelper {
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    public void reset() {
+        release();
+        mState = State.UNINITIALIZED;
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     public void release() {
         if (mState == State.UNINITIALIZED || mState == State.RELEASED) {
             return;

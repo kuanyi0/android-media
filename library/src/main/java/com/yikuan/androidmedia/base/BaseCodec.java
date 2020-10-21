@@ -70,6 +70,11 @@ public abstract class BaseCodec<T extends CodecParam> {
         mState = State.STOPPED;
     }
 
+    public void reset() {
+        release();
+        mState = State.UNINITIALIZED;
+    }
+
     public void release() {
         if (mState == State.UNINITIALIZED || mState == State.RELEASED) {
             return;
