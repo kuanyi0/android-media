@@ -17,7 +17,7 @@ import java.io.IOException;
  * @author yikuan
  * @date 2020/09/20
  */
-public class MediaRecorderHelper extends Worker2<MediaRecorderHelper.ProjectionParam, MediaRecorderHelper.MediaParam> {
+public class MediaRecorderHelper extends Worker2<ProjectionParam, MediaRecorderHelper.MediaParam> {
     private static final String TAG = "MediaRecorderHelper";
     private MediaRecorder mMediaRecorder;
     private MediaProjection mMediaProjection;
@@ -81,20 +81,6 @@ public class MediaRecorderHelper extends Worker2<MediaRecorderHelper.ProjectionP
         mMediaProjection.stop();
         mMediaProjection = null;
         mState = State.RELEASED;
-    }
-
-    public static class ProjectionParam {
-        private MediaProjection projection;
-        private int dpi;
-        private int width;
-        private int height;
-
-        public ProjectionParam(MediaProjection projection, int dpi, int width, int height) {
-            this.projection = projection;
-            this.dpi = dpi;
-            this.width = width;
-            this.height = height;
-        }
     }
 
     public static class MediaParam {

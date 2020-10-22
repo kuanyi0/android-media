@@ -1,34 +1,70 @@
 package com.yikuan.androidmedia.record;
 
-import com.yikuan.androidmedia.base.Worker1;
+import android.hardware.display.DisplayManager;
+import android.hardware.display.VirtualDisplay;
+import android.media.projection.MediaProjection;
+import android.os.Build;
+import android.view.Surface;
+
+import androidx.annotation.RequiresApi;
+
+import com.yikuan.androidmedia.base.State;
+import com.yikuan.androidmedia.base.Worker2;
 
 /**
  * @author yikuan
  * @date 2020/09/20
  */
-public class VideoRecorder extends Worker1<VideoRecorder.Param> {
+public class VideoRecorder extends Worker2<ProjectionParam, Surface> {
+    private static final String TAG = "VideoRecorder";
+    private MediaProjection mMediaProjection;
+    private VirtualDisplay mVirtualDisplay;
+    private ProjectionParam mProjectionParam;
+    private Surface mSurface;
 
     @Override
-    protected void configure(Param param) {
-
+    protected void configure(ProjectionParam projectionParam, Surface surface) {
+        if (mState != State.UNINITIALIZED) {
+            return;
+        }
+        mProjectionParam = projectionParam;
+        mSurface = surface;
+        mState = State.CONFIGURED;
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     protected void start() {
-
+        if (mState != State.CONFIGURED) {
+            return;
+        }
+        mMediaProjection = mProjectionParam.projection;
+        mVirtualDisplay = mMediaProjection.createVirtualDisplay(TAG, mProjectionParam.width, mProjectionParam.height,
+                mProjectionParam.dpi, DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC, mSurface, null, null);
+        mState = State.RUNNING;
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     protected void stop() {
-
+        if (mState != State.RUNNING) {
+            return;
+        }
+        mVirtualDisplay.release();
+        mVirtualDisplay = null;
+        mMediaProjection.stop();
+        mMediaProjection = null;
+        mState = State.STOPPED;
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
     protected void release() {
-
-    }
-
-    public static class Param {
-
+        if (mState == State.UNINITIALIZED || mState == State.RELEASED) {
+            return;
+        }
+        mProjectionParam = null;
+        mSurface = null;
+        mState = State.RELEASED;
     }
 }

@@ -12,6 +12,7 @@ import com.yikuan.androidmedia.app.Constant;
 import com.yikuan.androidmedia.app.base.MediaProjectionService;
 import com.yikuan.androidmedia.base.State;
 import com.yikuan.androidmedia.record.MediaRecorderHelper;
+import com.yikuan.androidmedia.record.ProjectionParam;
 
 
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
@@ -28,7 +29,7 @@ public class MediaRecordService extends MediaProjectionService {
     }
 
     private void startRecord() {
-        MediaRecorderHelper.ProjectionParam projectionParam = new MediaRecorderHelper.ProjectionParam(mMediaProjection,
+        ProjectionParam projectionParam = new ProjectionParam(mMediaProjection,
                 ScreenUtils.getScreenDpi(), ScreenUtils.getScreenWidth(), ScreenUtils.getScreenHeight());
         MediaRecorderHelper.MediaParam mediaParam = new MediaRecorderHelper.MediaParam(MediaRecorder.AudioSource.MIC,
                 MediaRecorder.VideoSource.SURFACE, MediaRecorder.AudioEncoder.AAC, MediaRecorder.VideoEncoder.H264,
