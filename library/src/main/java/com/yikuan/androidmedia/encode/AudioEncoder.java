@@ -9,7 +9,7 @@ import com.yikuan.androidmedia.codec.SyncCodec;
  * @author yikuan
  * @date 2020/09/21
  */
-public class AudioEncoder extends SyncCodec<AudioParam> {
+public class AudioEncoder extends SyncCodec<AudioEncodeParam> {
     public static int MAX_INPUT_SIZE = 4 * 1024;
 
     @Override

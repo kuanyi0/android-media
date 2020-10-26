@@ -6,7 +6,7 @@ import com.yikuan.androidmedia.codec.BaseCodec;
  * @author yikuan
  * @date 2020/10/12
  */
-public class VideoParam extends BaseCodec.Param {
+public class VideoEncodeParam extends BaseCodec.Param {
     /**
      * 视频宽度
      */
@@ -50,7 +50,7 @@ public class VideoParam extends BaseCodec.Param {
      */
     int iFrameInterval;
 
-    public VideoParam(String type, int width, int height, int bitRate, int colorFormat, int frameRate, int iFrameInterval) {
+    public VideoEncodeParam(String type, int width, int height, int bitRate, int colorFormat, int frameRate, int iFrameInterval) {
         this.type = type;
         this.width = width;
         this.height = height;

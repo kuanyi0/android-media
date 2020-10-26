@@ -19,7 +19,7 @@ import com.yikuan.androidmedia.base.State;
 import com.yikuan.androidmedia.codec.SyncCodec;
 import com.yikuan.androidmedia.encode.VideoEncoder;
 import com.yikuan.androidmedia.encode.VideoEncoder2;
-import com.yikuan.androidmedia.encode.VideoParam;
+import com.yikuan.androidmedia.encode.VideoEncodeParam;
 
 import java.nio.ByteBuffer;
 
@@ -30,7 +30,7 @@ public class VideoEncodeService extends MediaProjectionService {
     private VideoEncoder mVideoEncoder;
     private VideoEncoder2 mVideoEncoder2;
     private VirtualDisplay mVirtualDisplay;
-    private VideoParam mParam = new VideoParam(MediaFormat.MIMETYPE_VIDEO_AVC, ScreenUtils.getScreenWidth(),
+    private VideoEncodeParam mParam = new VideoEncodeParam(MediaFormat.MIMETYPE_VIDEO_AVC, ScreenUtils.getScreenWidth(),
             ScreenUtils.getScreenHeight(), 8 * 1024 * 1024, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface, 30, 1);
 
     public VideoEncodeService() {
@@ -57,8 +57,8 @@ public class VideoEncodeService extends MediaProjectionService {
             }
 
             @Override
-            public void onOutputAvailable(byte[] output) {
-                Log.d(TAG, "onOutputAvailable: ");
+            public void onOutputBufferAvailable(int index, ByteBuffer byteBuffer, MediaCodec.BufferInfo bufferInfo) {
+                Log.d(TAG, "onOutputBufferAvailable: ");
             }
         });
     }

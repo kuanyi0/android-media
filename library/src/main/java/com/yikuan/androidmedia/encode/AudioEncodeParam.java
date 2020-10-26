@@ -6,7 +6,7 @@ import com.yikuan.androidmedia.codec.BaseCodec;
  * @author yikuan
  * @date 2020/10/12
  */
-public class AudioParam extends BaseCodec.Param {
+public class AudioEncodeParam extends BaseCodec.Param {
     /**
      * 采样率
      *
@@ -31,10 +31,13 @@ public class AudioParam extends BaseCodec.Param {
      * 64000
      * 96000
      * 128000
+     *
+     * sampleRate * bit * channel / 18
+     * eg. 44100 * 16 * 2 / 18 = 78400
      */
     int bitRate;
 
-    public AudioParam(String type, int sampleRate, int channel, int bitRate) {
+    public AudioEncodeParam(String type, int sampleRate, int channel, int bitRate) {
         this.type = type;
         this.sampleRate = sampleRate;
         this.channel = channel;

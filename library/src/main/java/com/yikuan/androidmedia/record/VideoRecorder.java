@@ -23,7 +23,7 @@ public class VideoRecorder extends Worker2<ProjectionParam, Surface> {
     private Surface mSurface;
 
     @Override
-    protected void configure(ProjectionParam projectionParam, Surface surface) {
+    public void configure(ProjectionParam projectionParam, Surface surface) {
         if (mState != State.UNINITIALIZED) {
             return;
         }
@@ -34,7 +34,7 @@ public class VideoRecorder extends Worker2<ProjectionParam, Surface> {
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
-    protected void start() {
+    public void start() {
         if (mState != State.CONFIGURED) {
             return;
         }
@@ -46,7 +46,7 @@ public class VideoRecorder extends Worker2<ProjectionParam, Surface> {
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
-    protected void stop() {
+    public void stop() {
         if (mState != State.RUNNING) {
             return;
         }
@@ -59,7 +59,7 @@ public class VideoRecorder extends Worker2<ProjectionParam, Surface> {
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
-    protected void release() {
+    public void release() {
         if (mState == State.UNINITIALIZED || mState == State.RELEASED) {
             return;
         }

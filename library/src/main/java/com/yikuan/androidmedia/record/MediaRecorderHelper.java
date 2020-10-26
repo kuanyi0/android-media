@@ -25,6 +25,7 @@ public class MediaRecorderHelper extends Worker2<ProjectionParam, MediaRecorderH
     private Callback mCallback;
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    @Override
     public void configure(ProjectionParam projectionParam, MediaParam mediaParam) {
         if (mState != State.UNINITIALIZED) {
             return;
@@ -53,6 +54,7 @@ public class MediaRecorderHelper extends Worker2<ProjectionParam, MediaRecorderH
         mCallback = callback;
     }
 
+    @Override
     public void start() {
         if (mState != State.CONFIGURED) {
             return;
@@ -61,6 +63,7 @@ public class MediaRecorderHelper extends Worker2<ProjectionParam, MediaRecorderH
         mState = State.RUNNING;
     }
 
+    @Override
     public void stop() {
         if (mState != State.RUNNING) {
             return;
@@ -70,6 +73,7 @@ public class MediaRecorderHelper extends Worker2<ProjectionParam, MediaRecorderH
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    @Override
     public void release() {
         if (mState == State.UNINITIALIZED || mState == State.RELEASED) {
             return;

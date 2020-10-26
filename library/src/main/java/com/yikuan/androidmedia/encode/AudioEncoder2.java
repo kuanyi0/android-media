@@ -9,7 +9,7 @@ import com.yikuan.androidmedia.codec.AsyncCodec;
  * @author yikuan
  * @date 2020/09/21
  */
-public class AudioEncoder2 extends AsyncCodec<AudioParam> {
+public class AudioEncoder2 extends AsyncCodec<AudioEncodeParam> {
     public static int MAX_INPUT_SIZE = 4 * 1024;
 
     @Override

@@ -11,7 +11,7 @@ import com.yikuan.androidmedia.codec.AsyncCodec;
  * @author yikuan
  * @date 2020/09/21
  */
-public class VideoEncoder2 extends AsyncCodec<VideoParam> {
+public class VideoEncoder2 extends AsyncCodec<VideoEncodeParam> {
 
     @Override
     protected boolean isEncoder() {

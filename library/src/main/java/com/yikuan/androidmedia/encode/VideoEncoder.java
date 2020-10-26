@@ -11,7 +11,7 @@ import com.yikuan.androidmedia.codec.SyncCodec;
  * @author yikuan
  * @date 2020/10/12
  */
-public class VideoEncoder extends SyncCodec<VideoParam> {
+public class VideoEncoder extends SyncCodec<VideoEncodeParam> {
 
     @Override
     protected boolean isEncoder() {

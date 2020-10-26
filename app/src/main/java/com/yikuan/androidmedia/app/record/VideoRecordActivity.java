@@ -14,10 +14,14 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.yikuan.androidmedia.app.R;
+import com.yikuan.androidmedia.app.base.MediaProjectionService;
 import com.yikuan.androidmedia.app.databinding.ActivityVideoRecordBinding;
 
 public class VideoRecordActivity extends AppCompatActivity implements View.OnClickListener {
     private static final String TAG = "VideoRecordActivity";
+    private static final int MEDIA_RECORDER = 1;
+    private static final int SCREEN_RECORDER = 2;
+    private int mUseRecorder = SCREEN_RECORDER;
     private ActivityVideoRecordBinding mBinding;
     private Intent mMediaRecorderServiceIntent;
 
@@ -52,7 +56,13 @@ public class VideoRecordActivity extends AppCompatActivity implements View.OnCli
     protected void onActivityResult(int requestCode, final int resultCode, @Nullable final Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (resultCode == Activity.RESULT_OK && data != null) {
-            mMediaRecorderServiceIntent = new Intent(this, MediaRecordService.class);
+            Class<? extends MediaProjectionService> cls;
+            if (mUseRecorder == MEDIA_RECORDER) {
+                cls = MediaRecordService.class;
+            } else {
+                cls = ScreenRecordService.class;
+            }
+            mMediaRecorderServiceIntent = new Intent(this, cls);
             Log.d(TAG, "onActivityResult: " + resultCode + ", " + data);
             mMediaRecorderServiceIntent.putExtra(MediaRecordService.RESULT_CODE, resultCode);
             mMediaRecorderServiceIntent.putExtra(MediaRecordService.RESULT_DATA, data);

@@ -7,16 +7,16 @@ package com.yikuan.androidmedia.base;
 abstract class Worker {
     protected volatile State mState = State.UNINITIALIZED;
 
-    protected abstract void start();
+    public abstract void start();
 
-    protected abstract void stop();
+    public abstract void stop();
 
-    protected void reset() {
+    public void reset() {
         release();
         mState = State.UNINITIALIZED;
     }
 
-    protected abstract void release();
+    public abstract void release();
 
     public State getState() {
         return mState;

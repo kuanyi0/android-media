@@ -19,6 +19,7 @@ public class AudioRecorder extends Worker1<AudioRecorder.Param> {
     private ExecutorService mExecutorService;
     private Runnable mRecordRunnable;
     private Callback mCallback;
+    private Param mParam;
 
     @Override
     public void configure(Param param) {
@@ -28,6 +29,7 @@ public class AudioRecorder extends Worker1<AudioRecorder.Param> {
         int bufferSizeInBytes = AudioRecord.getMinBufferSize(param.sampleRateInHz, param.channelConfig, param.audioFormat);
         mAudioRecord = new AudioRecord(param.audioSource, param.sampleRateInHz, param.channelConfig, param.audioFormat, bufferSizeInBytes);
         mAudioData = new byte[bufferSizeInBytes];
+        mParam = param;
         mState = State.CONFIGURED;
     }
 
@@ -42,6 +44,9 @@ public class AudioRecorder extends Worker1<AudioRecorder.Param> {
         }
         mAudioRecord.startRecording();
         mState = State.RUNNING;
+        if (mCallback == null) {
+            return;
+        }
         if (mExecutorService == null) {
             mExecutorService = Executors.newSingleThreadExecutor();
         }
@@ -49,6 +54,13 @@ public class AudioRecorder extends Worker1<AudioRecorder.Param> {
             mRecordRunnable = new RecordRunnable();
         }
         mExecutorService.execute(mRecordRunnable);
+    }
+
+    public int read(byte[] audioData) {
+        if (mState != State.RUNNING) {
+            return -1;
+        }
+        return mAudioRecord.read(audioData, 0, audioData.length);
     }
 
     @Override
@@ -70,10 +82,16 @@ public class AudioRecorder extends Worker1<AudioRecorder.Param> {
         mState = State.RELEASED;
     }
 
+    public long computePts(long size) {
+        int bit = mParam.audioFormat == AudioFormat.ENCODING_PCM_16BIT ? 16 : 8;
+        int channel = mParam.channelConfig == AudioFormat.CHANNEL_IN_STEREO ? 2 : 1;
+        return size / (mParam.sampleRateInHz * bit * channel / 8) * 1000_1000;
+    }
+
     private class RecordRunnable implements Runnable {
         @Override
         public void run() {
-            while (mState == State.RUNNING && mCallback != null) {
+            while (mState == State.RUNNING) {
                 int read = mAudioRecord.read(mAudioData, 0, mAudioData.length);
                 if (read >= 0) {
                     mCallback.onDataAvailable(mAudioData);

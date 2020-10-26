@@ -23,15 +23,15 @@ import com.yikuan.androidmedia.app.Utils;
 import com.yikuan.androidmedia.app.databinding.ActivityAudioEncodeBinding;
 import com.yikuan.androidmedia.encode.AudioEncoder;
 import com.yikuan.androidmedia.encode.AudioEncoder2;
-import com.yikuan.androidmedia.encode.AudioParam;
+import com.yikuan.androidmedia.encode.AudioEncodeParam;
 import com.yikuan.androidmedia.util.MediaCodecUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
@@ -41,7 +41,7 @@ public class AudioEncodeActivity extends AppCompatActivity implements View.OnCli
     private ActivityAudioEncodeBinding mBinding;
     private AudioEncoder mAudioEncoder;
     private AudioEncoder2 mAudioEncoder2;
-    private AudioParam mParam = new AudioParam(MediaFormat.MIMETYPE_AUDIO_AAC, 44100, 1, 96000);
+    private AudioEncodeParam mParam = new AudioEncodeParam(MediaFormat.MIMETYPE_AUDIO_AAC, 44100, 1, 96000);
     private File mSourceFile;
 
     @Override
@@ -82,8 +82,8 @@ public class AudioEncodeActivity extends AppCompatActivity implements View.OnCli
             }
 
             @Override
-            public void onOutputAvailable(byte[] output) {
-                Log.d(TAG, "onOutputAvailable: " + Arrays.toString(output));
+            public void onOutputBufferAvailable(int index, ByteBuffer byteBuffer, MediaCodec.BufferInfo bufferInfo) {
+                Log.d(TAG, "onOutputBufferAvailable: " + byteBuffer);
             }
         });
     }
@@ -179,7 +179,7 @@ public class AudioEncodeActivity extends AppCompatActivity implements View.OnCli
                         try {
                             int length = inputStream.read(data);
                             if (length > 0) {
-                                mAudioEncoder.write(data);
+                                mAudioEncoder.write(data, 0);
                             } else {
                                 encodeFinish();
                                 break;
