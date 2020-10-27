@@ -12,6 +12,7 @@ import java.nio.ByteBuffer;
  * @date 2020/10/12
  */
 public abstract class SyncCodec<T extends BaseCodec.Param> extends BaseCodec<T> {
+    private static final int TIMEOUT_US = 10000;
     private ByteBuffer[] mInputBuffers;
     private ByteBuffer[] mOutputBuffers;
     private MediaCodec.BufferInfo mOutputBufferInfo = new MediaCodec.BufferInfo();
@@ -39,7 +40,7 @@ public abstract class SyncCodec<T extends BaseCodec.Param> extends BaseCodec<T> 
         if (mState != State.RUNNING) {
             return;
         }
-        int inputBufferIndex = mMediaCodec.dequeueInputBuffer(-1);
+        int inputBufferIndex = mMediaCodec.dequeueInputBuffer(TIMEOUT_US);
         if (inputBufferIndex >= 0) {
             ByteBuffer inputBuffer;
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
@@ -51,10 +52,10 @@ public abstract class SyncCodec<T extends BaseCodec.Param> extends BaseCodec<T> 
             inputBuffer.put(data);
             mMediaCodec.queueInputBuffer(inputBufferIndex, 0, data.length, pts, 0);
         }
-        int outputBufferIndex = mMediaCodec.dequeueOutputBuffer(mOutputBufferInfo, 0);
+        int outputBufferIndex = mMediaCodec.dequeueOutputBuffer(mOutputBufferInfo, TIMEOUT_US);
         while (outputBufferIndex >= 0) {
             readOutputBuffer(outputBufferIndex);
-            outputBufferIndex = mMediaCodec.dequeueOutputBuffer(mOutputBufferInfo, 0);
+            outputBufferIndex = mMediaCodec.dequeueOutputBuffer(mOutputBufferInfo, TIMEOUT_US);
         }
         if (outputBufferIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
             MediaFormat mediaFormat = mMediaCodec.getOutputFormat();
@@ -76,7 +77,7 @@ public abstract class SyncCodec<T extends BaseCodec.Param> extends BaseCodec<T> 
     }
 
     private void readOutputBuffer(int index) {
-        if (mOutputBufferInfo.flags == MediaCodec.BUFFER_FLAG_CODEC_CONFIG) {
+        if ((mOutputBufferInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
             mOutputBufferInfo.size = 0;
         }
         ByteBuffer outputBuffer;

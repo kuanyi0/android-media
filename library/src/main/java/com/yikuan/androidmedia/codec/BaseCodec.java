@@ -51,6 +51,7 @@ public abstract class BaseCodec<T extends BaseCodec.Param> extends Worker1<T> {
             return;
         }
         if (mState == State.STOPPED) {
+            mMediaCodec.stop();
             internalConfigure();
         }
         mMediaCodec.start();
@@ -70,8 +71,6 @@ public abstract class BaseCodec<T extends BaseCodec.Param> extends Worker1<T> {
         if (mState != State.RUNNING) {
             return;
         }
-        mState = State.STOPPING;
-        mMediaCodec.stop();
         mState = State.STOPPED;
     }
 
@@ -80,6 +79,7 @@ public abstract class BaseCodec<T extends BaseCodec.Param> extends Worker1<T> {
         if (mState == State.UNINITIALIZED || mState == State.RELEASED) {
             return;
         }
+        mMediaCodec.stop();
         mMediaCodec.release();
         mMediaCodec = null;
         mState = State.RELEASED;

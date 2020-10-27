@@ -40,12 +40,15 @@ public abstract class AsyncCodec<T extends BaseCodec.Param> extends BaseCodec<T>
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-    public ByteBuffer read(int index) {
+    public ByteBuffer read(int index, MediaCodec.BufferInfo bufferInfo) {
         if (mState != State.RUNNING) {
             return null;
         }
+        if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
+            bufferInfo.size = 0;
+        }
         ByteBuffer outputBuffer = mMediaCodec.getOutputBuffer(index);
         mMediaCodec.releaseOutputBuffer(index, false);
-        return outputBuffer;
+        return bufferInfo.size > 0 ? outputBuffer : null;
     }
 }

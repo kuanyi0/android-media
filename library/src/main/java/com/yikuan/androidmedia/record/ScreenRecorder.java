@@ -27,8 +27,8 @@ import java.nio.ByteBuffer;
 public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRecorder.VideoParam, MediaMuxerHelper.Param> {
     private static final String TAG = "ScreenRecorder";
     private AudioRecorder mAudioRecorder = new AudioRecorder();
-    private AudioEncoder mAudioEncoder = new AudioEncoder();
     private VideoRecorder mVideoRecorder = new VideoRecorder();
+    private AudioEncoder mAudioEncoder = new AudioEncoder();
     private VideoEncoder2 mVideoEncoder = new VideoEncoder2();
     private MediaMuxerHelper mMediaMuxerHelper = new MediaMuxerHelper();
     private int mAudioTrackIndex = -1;
@@ -95,8 +95,10 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
 
             @Override
             public void onOutputBufferAvailable(@NonNull MediaCodec codec, int index, @NonNull MediaCodec.BufferInfo info) {
-                ByteBuffer outputBuffer = mVideoEncoder.read(index);
-                checkAndWriteIntoMuxer(mVideoTrackIndex, outputBuffer, info);
+                ByteBuffer outputBuffer = mVideoEncoder.read(index, info);
+                if (outputBuffer != null) {
+                    checkAndWriteIntoMuxer(mVideoTrackIndex, outputBuffer, info);
+                }
             }
 
             @Override
@@ -142,8 +144,8 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
             return;
         }
         mAudioRecorder.start();
-        mAudioEncoder.start();
         mVideoRecorder.start();
+        mAudioEncoder.start();
         mVideoEncoder.start();
         mState = State.RUNNING;
         mStartTime = SystemClock.elapsedRealtimeNanos();
@@ -155,11 +157,11 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
         if (mState != State.RUNNING) {
             return;
         }
-        mAudioEncoder.stop();
-        mAudioRecorder.stop();
-        mVideoEncoder.stop();
-        mVideoRecorder.stop();
         mMediaMuxerHelper.stop();
+        mAudioEncoder.stop();
+        mVideoEncoder.stop();
+        mAudioRecorder.stop();
+        mVideoRecorder.stop();
         mState = State.STOPPED;
     }
 
@@ -169,11 +171,11 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
         if (mState == State.UNINITIALIZED || mState == State.RELEASED) {
             return;
         }
-        mAudioEncoder.release();
-        mAudioRecorder.release();
-        mVideoEncoder.release();
-        mVideoRecorder.release();
         mMediaMuxerHelper.release();
+        mAudioEncoder.release();
+        mVideoEncoder.release();
+        mAudioRecorder.release();
+        mVideoRecorder.release();
         mState = State.RELEASED;
     }
 
