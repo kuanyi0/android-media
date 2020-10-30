@@ -3,8 +3,6 @@ package com.yikuan.androidmedia.codec;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
 
-import com.yikuan.androidmedia.base.State;
-
 import java.nio.ByteBuffer;
 
 /**
@@ -20,7 +18,6 @@ public abstract class SyncCodec<T extends BaseCodec.Param> extends BaseCodec<T> 
 
     @Override
     protected void prepare() {
-
     }
 
     @Override
@@ -36,8 +33,8 @@ public abstract class SyncCodec<T extends BaseCodec.Param> extends BaseCodec<T> 
         mCallback = callback;
     }
 
-    public void write(byte[] data, long pts) {
-        if (mState != State.RUNNING) {
+    public synchronized void write(byte[] data, long pts) {
+        if (!isRunning()) {
             return;
         }
         int inputBufferIndex = mMediaCodec.dequeueInputBuffer(TIMEOUT_US);
@@ -57,20 +54,20 @@ public abstract class SyncCodec<T extends BaseCodec.Param> extends BaseCodec<T> 
             readOutputBuffer(outputBufferIndex);
             outputBufferIndex = mMediaCodec.dequeueOutputBuffer(mOutputBufferInfo, TIMEOUT_US);
         }
-        if (outputBufferIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
+        if (outputBufferIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED && mCallback != null) {
             MediaFormat mediaFormat = mMediaCodec.getOutputFormat();
             mCallback.onOutputFormatChanged(mediaFormat);
         }
     }
 
-    public void read() {
-        if (mState != State.RUNNING) {
+    public synchronized void read() {
+        if (!isRunning()) {
             return;
         }
         int index = mMediaCodec.dequeueOutputBuffer(mOutputBufferInfo, 0);
         if (index >= 0) {
             readOutputBuffer(index);
-        } else if (index == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
+        } else if (index == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED && mCallback != null) {
             MediaFormat mediaFormat = mMediaCodec.getOutputFormat();
             mCallback.onOutputFormatChanged(mediaFormat);
         }
@@ -86,7 +83,7 @@ public abstract class SyncCodec<T extends BaseCodec.Param> extends BaseCodec<T> 
         } else {
             outputBuffer = mOutputBuffers[index];
         }
-        if (mOutputBufferInfo.size > 0) {
+        if (mOutputBufferInfo.size > 0 && mCallback != null) {
             mCallback.onOutputBufferAvailable(index, outputBuffer, mOutputBufferInfo);
         }
         mMediaCodec.releaseOutputBuffer(index, false);

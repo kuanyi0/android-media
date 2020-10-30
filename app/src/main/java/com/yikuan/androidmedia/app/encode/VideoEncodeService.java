@@ -15,7 +15,6 @@ import androidx.annotation.RequiresApi;
 import com.yikuan.androidcommon.util.ScreenUtils;
 import com.yikuan.androidcommon.util.ThreadPoolManager;
 import com.yikuan.androidmedia.app.base.MediaProjectionService;
-import com.yikuan.androidmedia.base.State;
 import com.yikuan.androidmedia.codec.SyncCodec;
 import com.yikuan.androidmedia.encode.VideoEncoder;
 import com.yikuan.androidmedia.encode.VideoEncoder2;
@@ -26,7 +25,7 @@ import java.nio.ByteBuffer;
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class VideoEncodeService extends MediaProjectionService {
     private static final String TAG = "VideoEncodeService";
-    private static final boolean ASYNC_MODE = true;
+    private static final boolean SYNC_MODE = true;
     private VideoEncoder mVideoEncoder;
     private VideoEncoder2 mVideoEncoder2;
     private VirtualDisplay mVirtualDisplay;
@@ -38,7 +37,7 @@ public class VideoEncodeService extends MediaProjectionService {
 
     @Override
     protected void start() {
-        if (ASYNC_MODE) {
+        if (SYNC_MODE) {
             initEncoder();
         } else {
             initEncoder2();
@@ -75,7 +74,7 @@ public class VideoEncodeService extends MediaProjectionService {
             public void onOutputBufferAvailable(@NonNull MediaCodec codec, int index, @NonNull MediaCodec.BufferInfo info) {
                 Log.d(TAG, "onOutputBufferAvailable: " + index);
                 ByteBuffer byteBuffer = codec.getOutputBuffer(index);
-                Log.d(TAG, "onOutputBufferAvailable: " + byteBuffer.toString());
+                Log.d(TAG, "onOutputBufferAvailable: " + byteBuffer);
                 codec.releaseOutputBuffer(index, false);
             }
 
@@ -104,7 +103,7 @@ public class VideoEncodeService extends MediaProjectionService {
             ThreadPoolManager.getInstance().execute(new Runnable() {
                 @Override
                 public void run() {
-                    while (mVideoEncoder.getState() == State.RUNNING) {
+                    while (mVideoEncoder.isRunning()) {
                         mVideoEncoder.read();
                     }
                 }

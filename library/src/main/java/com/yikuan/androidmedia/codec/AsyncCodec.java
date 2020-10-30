@@ -5,8 +5,6 @@ import android.os.Build;
 
 import androidx.annotation.RequiresApi;
 
-import com.yikuan.androidmedia.base.State;
-
 import java.nio.ByteBuffer;
 
 /**
@@ -30,8 +28,8 @@ public abstract class AsyncCodec<T extends BaseCodec.Param> extends BaseCodec<T>
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-    public void write(int index, byte[] data, long pts) {
-        if (mState != State.RUNNING) {
+    public synchronized void write(int index, byte[] data, long pts) {
+        if (!isRunning()) {
             return;
         }
         ByteBuffer inputBuffer = mMediaCodec.getInputBuffer(index);
@@ -40,8 +38,8 @@ public abstract class AsyncCodec<T extends BaseCodec.Param> extends BaseCodec<T>
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-    public ByteBuffer read(int index, MediaCodec.BufferInfo bufferInfo) {
-        if (mState != State.RUNNING) {
+    public synchronized ByteBuffer read(int index, MediaCodec.BufferInfo bufferInfo) {
+        if (!isRunning()) {
             return null;
         }
         if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {

@@ -12,6 +12,7 @@ import com.yikuan.androidmedia.base.Worker1;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * @author yikuan
@@ -23,9 +24,7 @@ public class MediaMuxerHelper extends Worker1<MediaMuxerHelper.Param> {
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
     @Override
     public void configure(Param param) {
-        if (mState != State.UNINITIALIZED) {
-            return;
-        }
+        checkCurrentStateInStates(State.UNINITIALIZED);
         try {
             mMediaMuxer = new MediaMuxer(param.path, param.format);
         } catch (IOException e) {
@@ -37,25 +36,24 @@ public class MediaMuxerHelper extends Worker1<MediaMuxerHelper.Param> {
 
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
     public int addTrack(MediaFormat mediaFormat) {
-        if (mState != State.CONFIGURED) {
-            return -1;
-        }
+        checkCurrentStateInStates(State.CONFIGURED);
         return mMediaMuxer.addTrack(mediaFormat);
     }
 
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
     @Override
     public void start() {
-        if (mState != State.CONFIGURED) {
+        if (mState == State.RUNNING) {
             return;
         }
+        checkCurrentStateInStates(State.CONFIGURED);
         mMediaMuxer.start();
         mState = State.RUNNING;
     }
 
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
-    public void write(int trackIndex, ByteBuffer buffer, MediaCodec.BufferInfo bufferInfo) {
-        if (mState != State.RUNNING) {
+    public synchronized void write(int trackIndex, ByteBuffer buffer, MediaCodec.BufferInfo bufferInfo) {
+        if (!isRunning()) {
             return;
         }
         mMediaMuxer.writeSampleData(trackIndex, buffer, bufferInfo);
@@ -63,10 +61,11 @@ public class MediaMuxerHelper extends Worker1<MediaMuxerHelper.Param> {
 
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
     @Override
-    public void stop() {
-        if (mState != State.RUNNING) {
+    public synchronized void stop() {
+        if (mState == State.STOPPED) {
             return;
         }
+        checkCurrentStateInStates(State.RUNNING);
         mMediaMuxer.stop();
         mState = State.STOPPED;
     }

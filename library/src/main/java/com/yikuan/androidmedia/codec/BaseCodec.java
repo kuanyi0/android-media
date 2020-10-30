@@ -22,9 +22,7 @@ public abstract class BaseCodec<T extends BaseCodec.Param> extends Worker1<T> {
 
     @Override
     public void configure(T param) {
-        if (mState != State.UNINITIALIZED) {
-            return;
-        }
+        checkCurrentStateInStates(State.UNINITIALIZED);
         try {
             if (isEncoder()) {
                 mMediaCodec = MediaCodec.createEncoderByType(param.type);
@@ -45,32 +43,32 @@ public abstract class BaseCodec<T extends BaseCodec.Param> extends Worker1<T> {
         mMediaCodec.configure(configureMediaFormat(), null, null, isEncoder() ? MediaCodec.CONFIGURE_FLAG_ENCODE : 0);
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
+    public Surface getInputSurface() {
+        checkCurrentStateInStates(State.CONFIGURED);
+        return mMediaCodec.createInputSurface();
+    }
+
     @Override
     public void start() {
-        if (mState != State.CONFIGURED && mState != State.STOPPED) {
+        if (mState == State.RUNNING) {
             return;
         }
+        checkCurrentStateInStates(State.CONFIGURED, State.STOPPED);
         if (mState == State.STOPPED) {
-            mMediaCodec.stop();
             internalConfigure();
         }
         mMediaCodec.start();
         mState = State.RUNNING;
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
-    public Surface getInputSurface() {
-        if (mState != State.CONFIGURED) {
-            return null;
-        }
-        return mMediaCodec.createInputSurface();
-    }
-
     @Override
-    public void stop() {
-        if (mState != State.RUNNING) {
+    public synchronized void stop() {
+        if (mState == State.STOPPED) {
             return;
         }
+        checkCurrentStateInStates(State.RUNNING);
+        mMediaCodec.stop();
         mState = State.STOPPED;
     }
 
@@ -79,7 +77,6 @@ public abstract class BaseCodec<T extends BaseCodec.Param> extends Worker1<T> {
         if (mState == State.UNINITIALIZED || mState == State.RELEASED) {
             return;
         }
-        mMediaCodec.stop();
         mMediaCodec.release();
         mMediaCodec = null;
         mState = State.RELEASED;

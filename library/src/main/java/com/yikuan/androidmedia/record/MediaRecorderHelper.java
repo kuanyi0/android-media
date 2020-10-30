@@ -22,14 +22,11 @@ public class MediaRecorderHelper extends Worker2<ProjectionParam, MediaRecorderH
     private MediaRecorder mMediaRecorder;
     private MediaProjection mMediaProjection;
     private VirtualDisplay mVirtualDisplay;
-    private Callback mCallback;
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     public void configure(ProjectionParam projectionParam, MediaParam mediaParam) {
-        if (mState != State.UNINITIALIZED) {
-            return;
-        }
+        checkCurrentStateInStates(State.UNINITIALIZED);
         mMediaRecorder = new MediaRecorder();
         mMediaRecorder.setAudioSource(mediaParam.audioSource);
         mMediaRecorder.setVideoSource(mediaParam.videoSource);
@@ -46,28 +43,19 @@ public class MediaRecorderHelper extends Worker2<ProjectionParam, MediaRecorderH
             mState = State.CONFIGURED;
         } catch (IOException e) {
             e.printStackTrace();
-            mCallback.onError(e.toString());
         }
-    }
-
-    public void setCallback(Callback callback) {
-        mCallback = callback;
     }
 
     @Override
     public void start() {
-        if (mState != State.CONFIGURED) {
-            return;
-        }
+        checkCurrentStateInStates(State.CONFIGURED);
         mMediaRecorder.start();
         mState = State.RUNNING;
     }
 
     @Override
     public void stop() {
-        if (mState != State.RUNNING) {
-            return;
-        }
+        checkCurrentStateInStates(State.RUNNING);
         mMediaRecorder.stop();
         mState = State.STOPPED;
     }
@@ -75,9 +63,7 @@ public class MediaRecorderHelper extends Worker2<ProjectionParam, MediaRecorderH
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     public void release() {
-        if (mState == State.UNINITIALIZED || mState == State.RELEASED) {
-            return;
-        }
+        checkCurrentStateNotInStates(State.UNINITIALIZED, State.RELEASED);
         mMediaRecorder.release();
         mMediaRecorder = null;
         mVirtualDisplay.release();
@@ -141,9 +127,5 @@ public class MediaRecorderHelper extends Worker2<ProjectionParam, MediaRecorderH
             this.format = format;
             this.output = output;
         }
-    }
-
-    public interface Callback {
-        void onError(String error);
     }
 }

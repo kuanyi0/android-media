@@ -23,9 +23,7 @@ public class AudioRecorder extends Worker1<AudioRecorder.Param> {
 
     @Override
     public void configure(Param param) {
-        if (mState != State.UNINITIALIZED) {
-            return;
-        }
+        checkCurrentStateInStates(State.UNINITIALIZED);
         int bufferSizeInBytes = AudioRecord.getMinBufferSize(param.sampleRateInHz, param.channelConfig, param.audioFormat);
         mAudioRecord = new AudioRecord(param.audioSource, param.sampleRateInHz, param.channelConfig, param.audioFormat, bufferSizeInBytes);
         mAudioData = new byte[bufferSizeInBytes];
@@ -39,9 +37,10 @@ public class AudioRecorder extends Worker1<AudioRecorder.Param> {
 
     @Override
     public void start() {
-        if (mState != State.CONFIGURED) {
+        if (mState == State.RUNNING) {
             return;
         }
+        checkCurrentStateInStates(State.CONFIGURED);
         mAudioRecord.startRecording();
         mState = State.RUNNING;
         if (mCallback == null) {
@@ -57,17 +56,16 @@ public class AudioRecorder extends Worker1<AudioRecorder.Param> {
     }
 
     public int read(byte[] audioData) {
-        if (mState != State.RUNNING) {
-            return -1;
-        }
+        checkCurrentStateInStates(State.RUNNING);
         return mAudioRecord.read(audioData, 0, audioData.length);
     }
 
     @Override
     public void stop() {
-        if (mState != State.RUNNING) {
+        if (mState == State.STOPPED) {
             return;
         }
+        checkCurrentStateInStates(State.RUNNING);
         mAudioRecord.stop();
         mState = State.STOPPED;
     }
@@ -91,7 +89,7 @@ public class AudioRecorder extends Worker1<AudioRecorder.Param> {
     private class RecordRunnable implements Runnable {
         @Override
         public void run() {
-            while (mState == State.RUNNING) {
+            while (isRunning()) {
                 int read = mAudioRecord.read(mAudioData, 0, mAudioData.length);
                 if (read >= 0) {
                     mCallback.onDataAvailable(mAudioData);

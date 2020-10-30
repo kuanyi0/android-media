@@ -37,12 +37,6 @@ public class MediaRecordService extends MediaProjectionService {
                 Constant.DIR_VIDEO_RECORD + "/" + DateUtils.formatTimeFileName() + ".mp4");
         mMediaRecorderHelper = new MediaRecorderHelper();
         mMediaRecorderHelper.configure(projectionParam, mediaParam);
-        mMediaRecorderHelper.setCallback(new MediaRecorderHelper.Callback() {
-            @Override
-            public void onError(String error) {
-                Log.e(TAG, "video record error: " + error);
-            }
-        });
         if (mMediaRecorderHelper.getState() == State.CONFIGURED) {
             mMediaRecorderHelper.start();
         } else {

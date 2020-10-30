@@ -24,9 +24,7 @@ public class VideoRecorder extends Worker2<ProjectionParam, Surface> {
 
     @Override
     public void configure(ProjectionParam projectionParam, Surface surface) {
-        if (mState != State.UNINITIALIZED) {
-            return;
-        }
+        checkCurrentStateInStates(State.UNINITIALIZED);
         mProjectionParam = projectionParam;
         mSurface = surface;
         mState = State.CONFIGURED;
@@ -35,9 +33,10 @@ public class VideoRecorder extends Worker2<ProjectionParam, Surface> {
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     public void start() {
-        if (mState != State.CONFIGURED) {
+        if (mState == State.RUNNING) {
             return;
         }
+        checkCurrentStateInStates(State.CONFIGURED);
         mMediaProjection = mProjectionParam.projection;
         mVirtualDisplay = mMediaProjection.createVirtualDisplay(TAG, mProjectionParam.width, mProjectionParam.height,
                 mProjectionParam.dpi, DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC, mSurface, null, null);
@@ -47,9 +46,10 @@ public class VideoRecorder extends Worker2<ProjectionParam, Surface> {
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     public void stop() {
-        if (mState != State.RUNNING) {
+        if (mState == State.STOPPED) {
             return;
         }
+        checkCurrentStateInStates(State.RUNNING);
         mVirtualDisplay.release();
         mVirtualDisplay = null;
         mMediaProjection.stop();

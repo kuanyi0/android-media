@@ -37,7 +37,7 @@ import java.util.List;
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class AudioEncodeActivity extends AppCompatActivity implements View.OnClickListener {
     private static final String TAG = "AudioEncodeActivity";
-    private static final boolean ASYNC_MODE = true;
+    private static final boolean SYNC_MODE = true;
     private ActivityAudioEncodeBinding mBinding;
     private AudioEncoder mAudioEncoder;
     private AudioEncoder2 mAudioEncoder2;
@@ -51,7 +51,7 @@ public class AudioEncodeActivity extends AppCompatActivity implements View.OnCli
         setContentView(mBinding.getRoot());
         setTitle(R.string.audio_encode);
         initView();
-        if (ASYNC_MODE) {
+        if (SYNC_MODE) {
             initEncoder();
         } else {
             initEncoder2();
