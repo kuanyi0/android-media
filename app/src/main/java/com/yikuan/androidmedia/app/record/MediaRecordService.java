@@ -11,14 +11,14 @@ import com.yikuan.androidcommon.util.ScreenUtils;
 import com.yikuan.androidmedia.app.Constant;
 import com.yikuan.androidmedia.app.base.MediaProjectionService;
 import com.yikuan.androidmedia.base.State;
-import com.yikuan.androidmedia.record.MediaRecorderHelper;
+import com.yikuan.androidmedia.record.MediaRecordHelper;
 import com.yikuan.androidmedia.record.ProjectionParam;
 
 
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class MediaRecordService extends MediaProjectionService {
     private static final String TAG = "MediaRecorderService";
-    private MediaRecorderHelper mMediaRecorderHelper;
+    private MediaRecordHelper mMediaRecordHelper;
 
     public MediaRecordService() {
     }
@@ -31,14 +31,14 @@ public class MediaRecordService extends MediaProjectionService {
     private void startRecord() {
         ProjectionParam projectionParam = new ProjectionParam(mMediaProjection,
                 ScreenUtils.getScreenDpi(), ScreenUtils.getScreenWidth(), ScreenUtils.getScreenHeight());
-        MediaRecorderHelper.MediaParam mediaParam = new MediaRecorderHelper.MediaParam(MediaRecorder.AudioSource.MIC,
+        MediaRecordHelper.MediaParam mediaParam = new MediaRecordHelper.MediaParam(MediaRecorder.AudioSource.MIC,
                 MediaRecorder.VideoSource.SURFACE, MediaRecorder.AudioEncoder.AAC, MediaRecorder.VideoEncoder.H264,
                 ScreenUtils.getScreenWidth(), ScreenUtils.getScreenHeight(), MediaRecorder.OutputFormat.MPEG_4,
                 Constant.DIR_VIDEO_RECORD + "/" + DateUtils.formatTimeFileName() + ".mp4");
-        mMediaRecorderHelper = new MediaRecorderHelper();
-        mMediaRecorderHelper.configure(projectionParam, mediaParam);
-        if (mMediaRecorderHelper.getState() == State.CONFIGURED) {
-            mMediaRecorderHelper.start();
+        mMediaRecordHelper = new MediaRecordHelper();
+        mMediaRecordHelper.configure(projectionParam, mediaParam);
+        if (mMediaRecordHelper.getState() == State.CONFIGURED) {
+            mMediaRecordHelper.start();
         } else {
             Log.e(TAG, "video record error");
         }
@@ -46,7 +46,7 @@ public class MediaRecordService extends MediaProjectionService {
 
     @Override
     protected void stop() {
-        mMediaRecorderHelper.stop();
-        mMediaRecorderHelper.release();
+        mMediaRecordHelper.stop();
+        mMediaRecordHelper.release();
     }
 }

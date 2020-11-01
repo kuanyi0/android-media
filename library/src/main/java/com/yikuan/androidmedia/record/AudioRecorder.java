@@ -83,7 +83,7 @@ public class AudioRecorder extends Worker1<AudioRecorder.Param> {
     public long computePts(long size) {
         int bit = mParam.audioFormat == AudioFormat.ENCODING_PCM_16BIT ? 16 : 8;
         int channel = mParam.channelConfig == AudioFormat.CHANNEL_IN_STEREO ? 2 : 1;
-        return size / (mParam.sampleRateInHz * bit * channel / 8) * 1000_1000;
+        return size * 1000_000 / (mParam.sampleRateInHz * bit * channel / 8);
     }
 
     private class RecordRunnable implements Runnable {

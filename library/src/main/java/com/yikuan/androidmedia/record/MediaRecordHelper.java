@@ -17,7 +17,7 @@ import java.io.IOException;
  * @author yikuan
  * @date 2020/09/20
  */
-public class MediaRecorderHelper extends Worker2<ProjectionParam, MediaRecorderHelper.MediaParam> {
+public class MediaRecordHelper extends Worker2<ProjectionParam, MediaRecordHelper.MediaParam> {
     private static final String TAG = "MediaRecorderHelper";
     private MediaRecorder mMediaRecorder;
     private MediaProjection mMediaProjection;

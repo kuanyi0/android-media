@@ -76,7 +76,7 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
 
             @Override
             public void onDataError(int error) {
-                Log.d(TAG, "onDataError: ");
+                Log.d(TAG, "[audio]onDataError: ");
             }
         });
         mAudioRecorder.configure(audioParam.recordParam);
@@ -140,9 +140,15 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        bufferInfo.presentationTimeUs = (SystemClock.elapsedRealtimeNanos() - mStartTime) / 1000;
-        Log.d(TAG, "writeIntoMuxer: track = " + (trackIndex == mAudioTrackIndex ? "audio" : "video") + ", info = [" +
-                bufferInfo.size + ", " + bufferInfo.offset + ", " + bufferInfo.presentationTimeUs / 1000_000f + "s, " + bufferInfo.flags + "]");
+        long originalPts = bufferInfo.presentationTimeUs;
+        long timePts = (SystemClock.elapsedRealtimeNanos() - mStartTime) / 1000;
+        if (trackIndex == mVideoTrackIndex) {
+            bufferInfo.presentationTimeUs = timePts;
+        }
+        Log.d(TAG, (trackIndex == mAudioTrackIndex ? "[audio]" : "[video]") + "writeIntoMuxer: size = " +
+                bufferInfo.size + ", offset = " + bufferInfo.offset + ", flags = " + bufferInfo.flags +
+                ", pts = [" + originalPts / 1000_000f + "s -> " + bufferInfo.presentationTimeUs / 1000_000f +
+                "s, delta = " + (bufferInfo.presentationTimeUs - originalPts) / 1000_000f + "s]");
         mMediaMuxerHelper.write(trackIndex, byteBuffer, bufferInfo);
     }
 

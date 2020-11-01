@@ -49,6 +49,7 @@ def configSourcesAndJavadoc() {
             encoding 'UTF-8'
             charSet 'UTF-8'
             author true
+            failOnError false
             version project.versionName
             links 'http://docs.oracle.com/javase/7/docs/api'
             title "${project.desc} ${project.versionName}"
@@ -60,7 +61,9 @@ def configMaven() {
     publishing {
         publications {
             production(MavenPublication) {
-                artifact("$buildDir/outputs/aar/library-release.aar")
+                afterEvaluate {
+                    artifact bundleReleaseAar
+                }
                 artifact javadocJar
                 artifact sourcesJar
                 groupId project.groupId
