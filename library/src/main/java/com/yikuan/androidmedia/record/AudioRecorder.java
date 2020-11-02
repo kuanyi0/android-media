@@ -40,7 +40,7 @@ public class AudioRecorder extends Worker1<AudioRecorder.Param> {
         if (mState == State.RUNNING) {
             return;
         }
-        checkCurrentStateInStates(State.CONFIGURED);
+        checkCurrentStateInStates(State.CONFIGURED, State.STOPPED);
         mAudioRecord.startRecording();
         mState = State.RUNNING;
         if (mCallback == null) {

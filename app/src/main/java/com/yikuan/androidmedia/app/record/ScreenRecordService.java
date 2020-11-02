@@ -29,7 +29,7 @@ public class ScreenRecordService extends MediaProjectionService {
     private ScreenRecorder mScreenRecorder = new ScreenRecorder();
 
     @Override
-    protected void start() {
+    protected void onStart() {
         AudioRecorder.Param audioRecordParam = new AudioRecorder.Param(MediaRecorder.AudioSource.MIC,
                 44100, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
         AudioEncodeParam audioEncodeParam = new AudioEncodeParam(MediaFormat.MIMETYPE_AUDIO_AAC, 44100, 1, 96000);
@@ -43,11 +43,34 @@ public class ScreenRecordService extends MediaProjectionService {
         MediaMuxerHelper.Param muxerParam = new MediaMuxerHelper.Param(Constant.DIR_VIDEO_RECORD + "/" +
                 DateUtils.formatTimeFileName() + ".mp4", MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
         mScreenRecorder.configure(audioParam, videoParam, muxerParam);
+    }
+
+    @Override
+    protected void onStop() {
+        mScreenRecorder.stop();
+    }
+
+    @Override
+    public void start() {
+        super.start();
         mScreenRecorder.start();
     }
 
     @Override
-    protected void stop() {
+    public void resume() {
+        super.resume();
+        mScreenRecorder.resume();
+    }
+
+    @Override
+    public void pause() {
+        super.pause();
+        mScreenRecorder.pause();
+    }
+
+    @Override
+    public void stop() {
+        super.stop();
         mScreenRecorder.stop();
     }
 }

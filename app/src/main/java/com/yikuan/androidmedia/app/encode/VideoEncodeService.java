@@ -36,7 +36,7 @@ public class VideoEncodeService extends MediaProjectionService {
     }
 
     @Override
-    protected void start() {
+    protected void onStart() {
         if (SYNC_MODE) {
             initEncoder();
         } else {
@@ -114,7 +114,7 @@ public class VideoEncodeService extends MediaProjectionService {
     }
 
     @Override
-    protected void stop() {
+    protected void onStop() {
         if (mVideoEncoder != null) {
             mVideoEncoder.stop();
             mVideoEncoder.release();

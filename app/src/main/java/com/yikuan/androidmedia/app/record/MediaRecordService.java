@@ -24,7 +24,7 @@ public class MediaRecordService extends MediaProjectionService {
     }
 
     @Override
-    protected void start() {
+    protected void onStart() {
         startRecord();
     }
 
@@ -45,7 +45,7 @@ public class MediaRecordService extends MediaProjectionService {
     }
 
     @Override
-    protected void stop() {
+    protected void onStop() {
         mMediaRecordHelper.stop();
         mMediaRecordHelper.release();
     }

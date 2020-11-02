@@ -4,6 +4,7 @@ import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.media.MediaMuxer;
 import android.os.Build;
+import android.util.Log;
 
 import androidx.annotation.RequiresApi;
 
@@ -12,13 +13,13 @@ import com.yikuan.androidmedia.base.Worker1;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.concurrent.CountDownLatch;
 
 /**
  * @author yikuan
  * @date 2020/10/21
  */
 public class MediaMuxerHelper extends Worker1<MediaMuxerHelper.Param> {
+    private static final String TAG = "MediaMuxerHelper";
     private MediaMuxer mMediaMuxer;
 
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
@@ -54,6 +55,7 @@ public class MediaMuxerHelper extends Worker1<MediaMuxerHelper.Param> {
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
     public synchronized void write(int trackIndex, ByteBuffer buffer, MediaCodec.BufferInfo bufferInfo) {
         if (!isRunning()) {
+            Log.e(TAG, "write: invalid!");
             return;
         }
         mMediaMuxer.writeSampleData(trackIndex, buffer, bufferInfo);

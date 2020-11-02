@@ -2,6 +2,7 @@ package com.yikuan.androidmedia.codec;
 
 import android.media.MediaCodec;
 import android.media.MediaFormat;
+import android.util.Log;
 
 import java.nio.ByteBuffer;
 
@@ -10,6 +11,7 @@ import java.nio.ByteBuffer;
  * @date 2020/10/12
  */
 public abstract class SyncCodec<T extends BaseCodec.Param> extends BaseCodec<T> {
+    private static final String TAG = "SyncCodec";
     private static final int TIMEOUT_US = 10000;
     private ByteBuffer[] mInputBuffers;
     private ByteBuffer[] mOutputBuffers;
@@ -35,6 +37,7 @@ public abstract class SyncCodec<T extends BaseCodec.Param> extends BaseCodec<T> 
 
     public synchronized void write(byte[] data, long pts) {
         if (!isRunning()) {
+            Log.e(TAG, "write: invalid!");
             return;
         }
         int inputBufferIndex = mMediaCodec.dequeueInputBuffer(TIMEOUT_US);
@@ -62,6 +65,7 @@ public abstract class SyncCodec<T extends BaseCodec.Param> extends BaseCodec<T> 
 
     public synchronized void read() {
         if (!isRunning()) {
+            Log.e(TAG, "read: invalid!");
             return;
         }
         int index = mMediaCodec.dequeueOutputBuffer(mOutputBufferInfo, 0);

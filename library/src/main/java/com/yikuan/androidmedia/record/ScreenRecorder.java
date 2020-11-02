@@ -38,6 +38,7 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
     private int mAudioTrackIndex;
     private int mVideoTrackIndex;
     private long mStartTime;
+    private long mPauseTime;
     private long mTotalAudioRecordSize;
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
@@ -127,7 +128,7 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
             mVideoTrackIndex = index;
         }
         if (mAudioTrackIndex >= 0 && mVideoTrackIndex >= 0) {
-            Log.d(TAG, "checkAndStartMuxer: audioTrackIndex = " + mAudioTrackIndex + ", videoTrackIndex = " + mVideoTrackIndex);
+            Log.d(TAG, "addTrackAndStartMuxer: audioTrackIndex = " + mAudioTrackIndex + ", videoTrackIndex = " + mVideoTrackIndex);
             mMediaMuxerHelper.start();
             mCountDownLatch.countDown();
         }
@@ -140,15 +141,14 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        long originalPts = bufferInfo.presentationTimeUs;
         long timePts = (SystemClock.elapsedRealtimeNanos() - mStartTime) / 1000;
         if (trackIndex == mVideoTrackIndex) {
             bufferInfo.presentationTimeUs = timePts;
         }
         Log.d(TAG, (trackIndex == mAudioTrackIndex ? "[audio]" : "[video]") + "writeIntoMuxer: size = " +
                 bufferInfo.size + ", offset = " + bufferInfo.offset + ", flags = " + bufferInfo.flags +
-                ", pts = [" + originalPts / 1000_000f + "s -> " + bufferInfo.presentationTimeUs / 1000_000f +
-                "s, delta = " + (bufferInfo.presentationTimeUs - originalPts) / 1000_000f + "s]");
+                ", pts = [" + timePts / 1000_000f + "s / " + bufferInfo.presentationTimeUs / 1000_000f +
+                "s, delta = " + (bufferInfo.presentationTimeUs - timePts) / 1000_000f + "s]");
         mMediaMuxerHelper.write(trackIndex, byteBuffer, bufferInfo);
     }
 
@@ -168,12 +168,36 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    public void resume() {
+        if (mState == State.RUNNING) {
+            return;
+        }
+        checkCurrentStateInStates(State.PAUSED);
+        mAudioRecorder.start();
+        mVideoRecorder.start();
+        mState = State.RUNNING;
+        mStartTime += (SystemClock.elapsedRealtimeNanos() - mPauseTime);
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+    public void pause() {
+        if (mState == State.PAUSED) {
+            return;
+        }
+        checkCurrentStateInStates(State.RUNNING);
+        mAudioRecorder.stop();
+        mVideoRecorder.stop();
+        mState = State.PAUSED;
+        mPauseTime = SystemClock.elapsedRealtimeNanos();
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     public void stop() {
         if (mState == State.STOPPED) {
             return;
         }
-        checkCurrentStateInStates(State.RUNNING);
+        checkCurrentStateInStates(State.RUNNING, State.PAUSED);
         mMediaMuxerHelper.stop();
         mAudioEncoder.stop();
         mVideoEncoder.stop();
@@ -182,7 +206,7 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
         mState = State.STOPPED;
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     public void release() {
         if (mState == State.UNINITIALIZED || mState == State.RELEASED) {

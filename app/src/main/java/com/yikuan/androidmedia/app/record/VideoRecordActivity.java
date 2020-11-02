@@ -1,11 +1,16 @@
 package com.yikuan.androidmedia.app.record;
 
 import android.app.Activity;
+import android.app.Service;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.media.projection.MediaProjectionManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.IBinder;
+import android.os.SystemClock;
 import android.util.Log;
 import android.view.View;
 
@@ -21,9 +26,25 @@ public class VideoRecordActivity extends AppCompatActivity implements View.OnCli
     private static final String TAG = "VideoRecordActivity";
     private static final int MEDIA_RECORDER = 1;
     private static final int SCREEN_RECORDER = 2;
-    private int mUseRecorder = SCREEN_RECORDER;
+    private int mRecorder = SCREEN_RECORDER;
+    private long mStartTime;
+    private long mPauseDuration;
     private ActivityVideoRecordBinding mBinding;
-    private Intent mMediaRecorderServiceIntent;
+    private MediaProjectionService mService;
+    private ServiceConnection mConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            Log.d(TAG, "onServiceConnected: ");
+            MediaProjectionService.MediaProjectionBinder binder = (MediaProjectionService.MediaProjectionBinder) service;
+            mService = binder.getService();
+            internalStart();
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            Log.d(TAG, "onServiceDisconnected: ");
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,7 +53,11 @@ public class VideoRecordActivity extends AppCompatActivity implements View.OnCli
         setContentView(mBinding.getRoot());
         setTitle(R.string.video_record);
         mBinding.btnStart.setOnClickListener(this);
+        mBinding.btnResume.setOnClickListener(this);
+        mBinding.btnPause.setOnClickListener(this);
         mBinding.btnStop.setOnClickListener(this);
+        mBinding.btnResume.setEnabled(false);
+        mBinding.btnPause.setEnabled(false);
         mBinding.btnStop.setEnabled(false);
     }
 
@@ -42,6 +67,12 @@ public class VideoRecordActivity extends AppCompatActivity implements View.OnCli
         switch (view.getId()) {
             case R.id.btn_start:
                 start();
+                break;
+            case R.id.btn_resume:
+                resume();
+                break;
+            case R.id.btn_pause:
+                pause();
                 break;
             case R.id.btn_stop:
                 stop();
@@ -57,16 +88,16 @@ public class VideoRecordActivity extends AppCompatActivity implements View.OnCli
         super.onActivityResult(requestCode, resultCode, data);
         if (resultCode == Activity.RESULT_OK && data != null) {
             Class<? extends MediaProjectionService> cls;
-            if (mUseRecorder == MEDIA_RECORDER) {
+            if (mRecorder == MEDIA_RECORDER) {
                 cls = MediaRecordService.class;
             } else {
                 cls = ScreenRecordService.class;
             }
-            mMediaRecorderServiceIntent = new Intent(this, cls);
+            Intent recordServiceIntent = new Intent(this, cls);
             Log.d(TAG, "onActivityResult: " + resultCode + ", " + data);
-            mMediaRecorderServiceIntent.putExtra(MediaRecordService.RESULT_CODE, resultCode);
-            mMediaRecorderServiceIntent.putExtra(MediaRecordService.RESULT_DATA, data);
-            startForegroundService(mMediaRecorderServiceIntent);
+            recordServiceIntent.putExtra(MediaRecordService.RESULT_CODE, resultCode);
+            recordServiceIntent.putExtra(MediaRecordService.RESULT_DATA, data);
+            bindService(recordServiceIntent, mConnection, Service.BIND_AUTO_CREATE);
         } else {
             finish();
         }
@@ -77,13 +108,50 @@ public class VideoRecordActivity extends AppCompatActivity implements View.OnCli
         MediaProjectionManager mediaProjectionManager = (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
         Intent intent = mediaProjectionManager.createScreenCaptureIntent();
         startActivityForResult(intent, 0);
+    }
+
+    private void internalStart() {
+        mService.start();
+        mStartTime = SystemClock.elapsedRealtime();
+        mBinding.chronometer.setBase(SystemClock.elapsedRealtime());
+        mBinding.chronometer.start();
         mBinding.btnStart.setEnabled(false);
+        mBinding.btnResume.setEnabled(false);
+        mBinding.btnPause.setEnabled(true);
         mBinding.btnStop.setEnabled(true);
     }
 
+    private void resume() {
+        mService.resume();
+        mStartTime = SystemClock.elapsedRealtime();
+        mBinding.chronometer.setBase(SystemClock.elapsedRealtime() - mPauseDuration);
+        mBinding.chronometer.start();
+        mBinding.btnResume.setEnabled(false);
+        mBinding.btnPause.setEnabled(true);
+    }
+
+    private void pause() {
+        mService.pause();
+        mPauseDuration += SystemClock.elapsedRealtime() - mStartTime;
+        mBinding.chronometer.stop();
+        mBinding.btnResume.setEnabled(true);
+        mBinding.btnPause.setEnabled(false);
+    }
+
     private void stop() {
-        stopService(mMediaRecorderServiceIntent);
+        unbindService(mConnection);
+        mBinding.chronometer.stop();
         mBinding.btnStart.setEnabled(true);
+        mBinding.btnResume.setEnabled(false);
+        mBinding.btnPause.setEnabled(false);
         mBinding.btnStop.setEnabled(false);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mService != null && mService.isConnected()) {
+            stop();
+        }
     }
 }

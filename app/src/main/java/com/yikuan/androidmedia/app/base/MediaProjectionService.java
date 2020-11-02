@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
+import android.os.Binder;
 import android.os.Build;
 import android.os.IBinder;
 
@@ -23,6 +24,7 @@ public abstract class MediaProjectionService extends Service {
     public static final String RESULT_CODE = "resultCode";
     public static final String RESULT_DATA = "resultData";
     protected MediaProjection mMediaProjection;
+    private MediaProjectionBinder mBinder = new MediaProjectionBinder();
 
     @Override
     public void onCreate() {
@@ -34,28 +36,63 @@ public abstract class MediaProjectionService extends Service {
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        getProjectionAndStart(intent);
+        return super.onStartCommand(intent, flags, startId);
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    @Nullable
+    @Override
+    public IBinder onBind(Intent intent) {
+        getProjectionAndStart(intent);
+        return mBinder;
+    }
+
+    @Override
+    public boolean onUnbind(Intent intent) {
+        mBinder = null;
+        return super.onUnbind(intent);
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    private void getProjectionAndStart(Intent intent) {
         MediaProjectionManager mediaProjectionManager = (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
         mMediaProjection = mediaProjectionManager.getMediaProjection(intent.getIntExtra(RESULT_CODE, 0),
                 (Intent) Objects.requireNonNull(intent.getParcelableExtra(RESULT_DATA)));
-        start();
-        return super.onStartCommand(intent, flags, startId);
+        onStart();
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     public void onDestroy() {
         super.onDestroy();
-        stop();
+        onStop();
         mMediaProjection.stop();
     }
 
-    @Nullable
-    @Override
-    public IBinder onBind(Intent intent) {
-        return null;
+    protected abstract void onStart();
+
+    protected abstract void onStop();
+
+    public class MediaProjectionBinder extends Binder {
+        public MediaProjectionService getService() {
+            return MediaProjectionService.this;
+        }
     }
 
-    protected abstract void start();
+    public boolean isConnected() {
+        return mBinder != null;
+    }
 
-    protected abstract void stop();
+    public void start() {
+    }
+
+    public void resume() {
+    }
+
+    public void pause() {
+    }
+
+    public void stop() {
+    }
 }

@@ -26,6 +26,7 @@ public class VideoRecorder extends Worker2<ProjectionParam, Surface> {
     public void configure(ProjectionParam projectionParam, Surface surface) {
         checkCurrentStateInStates(State.UNINITIALIZED);
         mProjectionParam = projectionParam;
+        mMediaProjection = mProjectionParam.projection;
         mSurface = surface;
         mState = State.CONFIGURED;
     }
@@ -36,14 +37,13 @@ public class VideoRecorder extends Worker2<ProjectionParam, Surface> {
         if (mState == State.RUNNING) {
             return;
         }
-        checkCurrentStateInStates(State.CONFIGURED);
-        mMediaProjection = mProjectionParam.projection;
+        checkCurrentStateInStates(State.CONFIGURED, State.STOPPED);
         mVirtualDisplay = mMediaProjection.createVirtualDisplay(TAG, mProjectionParam.width, mProjectionParam.height,
                 mProjectionParam.dpi, DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC, mSurface, null, null);
         mState = State.RUNNING;
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
     public void stop() {
         if (mState == State.STOPPED) {
@@ -52,19 +52,17 @@ public class VideoRecorder extends Worker2<ProjectionParam, Surface> {
         checkCurrentStateInStates(State.RUNNING);
         mVirtualDisplay.release();
         mVirtualDisplay = null;
-        mMediaProjection.stop();
-        mMediaProjection = null;
         mState = State.STOPPED;
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     public void release() {
         if (mState == State.UNINITIALIZED || mState == State.RELEASED) {
             return;
         }
-        mProjectionParam = null;
-        mSurface = null;
+        mMediaProjection.stop();
+        mMediaProjection = null;
         mState = State.RELEASED;
     }
 }

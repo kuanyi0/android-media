@@ -2,6 +2,7 @@ package com.yikuan.androidmedia.codec;
 
 import android.media.MediaCodec;
 import android.os.Build;
+import android.util.Log;
 
 import androidx.annotation.RequiresApi;
 
@@ -12,6 +13,7 @@ import java.nio.ByteBuffer;
  * @date 2020/10/12
  */
 public abstract class AsyncCodec<T extends BaseCodec.Param> extends BaseCodec<T> {
+    private static final String TAG = "AsyncCodec";
     private MediaCodec.Callback mCodecCallback;
 
     public void setCallback(MediaCodec.Callback callback) {
@@ -30,6 +32,7 @@ public abstract class AsyncCodec<T extends BaseCodec.Param> extends BaseCodec<T>
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     public synchronized void write(int index, byte[] data, long pts) {
         if (!isRunning()) {
+            Log.e(TAG, "read: invalid!");
             return;
         }
         ByteBuffer inputBuffer = mMediaCodec.getInputBuffer(index);
@@ -40,6 +43,7 @@ public abstract class AsyncCodec<T extends BaseCodec.Param> extends BaseCodec<T>
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     public synchronized ByteBuffer read(int index, MediaCodec.BufferInfo bufferInfo) {
         if (!isRunning()) {
+            Log.e(TAG, "read: invalid!");
             return null;
         }
         if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
