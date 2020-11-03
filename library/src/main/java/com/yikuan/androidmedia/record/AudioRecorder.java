@@ -15,6 +15,7 @@ import java.util.concurrent.Executors;
  */
 public class AudioRecorder extends Worker1<AudioRecorder.Param> {
     private AudioRecord mAudioRecord;
+    private int mBufferSizeInBytes;
     private byte[] mAudioData;
     private ExecutorService mExecutorService;
     private Runnable mRecordRunnable;
@@ -24,9 +25,9 @@ public class AudioRecorder extends Worker1<AudioRecorder.Param> {
     @Override
     public void configure(Param param) {
         checkCurrentStateInStates(State.UNINITIALIZED);
-        int bufferSizeInBytes = AudioRecord.getMinBufferSize(param.sampleRateInHz, param.channelConfig, param.audioFormat);
-        mAudioRecord = new AudioRecord(param.audioSource, param.sampleRateInHz, param.channelConfig, param.audioFormat, bufferSizeInBytes);
-        mAudioData = new byte[bufferSizeInBytes];
+        mBufferSizeInBytes = AudioRecord.getMinBufferSize(param.sampleRateInHz, param.channelConfig, param.audioFormat);
+        mAudioRecord = new AudioRecord(param.audioSource, param.sampleRateInHz, param.channelConfig, param.audioFormat, mBufferSizeInBytes);
+        mAudioData = new byte[mBufferSizeInBytes];
         mParam = param;
         mState = State.CONFIGURED;
     }
@@ -80,7 +81,11 @@ public class AudioRecorder extends Worker1<AudioRecorder.Param> {
         mState = State.RELEASED;
     }
 
-    public long computePts(long size) {
+    public long computePtsByCount(long count) {
+        return computePtsBySize(mBufferSizeInBytes * count);
+    }
+
+    public long computePtsBySize(long size) {
         int bit = mParam.audioFormat == AudioFormat.ENCODING_PCM_16BIT ? 16 : 8;
         int channel = mParam.channelConfig == AudioFormat.CHANNEL_IN_STEREO ? 2 : 1;
         return size * 1000_000 / (mParam.sampleRateInHz * bit * channel / 8);

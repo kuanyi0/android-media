@@ -113,6 +113,7 @@ public class VideoRecordActivity extends AppCompatActivity implements View.OnCli
     private void internalStart() {
         mService.start();
         mStartTime = SystemClock.elapsedRealtime();
+        mPauseDuration = 0;
         mBinding.chronometer.setBase(SystemClock.elapsedRealtime());
         mBinding.chronometer.start();
         mBinding.btnStart.setEnabled(false);

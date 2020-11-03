@@ -39,6 +39,9 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
     private int mVideoTrackIndex;
     private long mStartTime;
     private long mPauseTime;
+    private long mResumeTime;
+    private long mEarliestTime;
+    private long mIdleTime;
     private long mTotalAudioRecordSize;
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
@@ -72,7 +75,7 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
         mAudioRecorder.setCallback(new AudioRecorder.Callback() {
             @Override
             public void onDataAvailable(byte[] data) {
-                mAudioEncoder.write(data, getAudioPts(data.length));
+                mAudioEncoder.write(data, getAudioPts());
             }
 
             @Override
@@ -83,9 +86,8 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
         mAudioRecorder.configure(audioParam.recordParam);
     }
 
-    private long getAudioPts(int size) {
-        mTotalAudioRecordSize += size;
-        return mAudioRecorder.computePts(mTotalAudioRecordSize);
+    private long getAudioPts() {
+        return mAudioRecorder.computePtsByCount(++mTotalAudioRecordSize);
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
@@ -141,7 +143,11 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        long timePts = (SystemClock.elapsedRealtimeNanos() - mStartTime) / 1000;
+        if (!isRunning()) {
+            Log.e(TAG, "writeIntoMuxer: invalid!");
+            return;
+        }
+        long timePts = computeTimePts();
         if (trackIndex == mVideoTrackIndex) {
             bufferInfo.presentationTimeUs = timePts;
         }
@@ -150,6 +156,36 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
                 ", pts = [" + timePts / 1000_000f + "s / " + bufferInfo.presentationTimeUs / 1000_000f +
                 "s, delta = " + (bufferInfo.presentationTimeUs - timePts) / 1000_000f + "s]");
         mMediaMuxerHelper.write(trackIndex, byteBuffer, bufferInfo);
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
+    private long computeTimePts() {
+        long timePts = getTimePts();
+        timePts = fixTimePts(timePts);
+        return timePts;
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
+    private synchronized long fixTimePts(long timePts) {
+        long oldTimePts = timePts;
+        if (mEarliestTime != 0) {
+            mStartTime += SystemClock.elapsedRealtimeNanos() - mEarliestTime;
+            timePts = getTimePts();
+            mEarliestTime = 0;
+            Log.e(TAG, "fixTimePts: when start, " + oldTimePts / 1000_000f + "s -> " + timePts / 1000_000f + "s");
+        }
+        if (mResumeTime != 0) {
+            mIdleTime += SystemClock.elapsedRealtimeNanos() - mResumeTime;
+            timePts = getTimePts();
+            mResumeTime = 0;
+            Log.e(TAG, "fixTimePts: when resume, " + oldTimePts / 1000_000f + "s -> " + timePts / 1000_000f + "s");
+        }
+        return timePts;
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
+    private long getTimePts() {
+        return (SystemClock.elapsedRealtimeNanos() - mStartTime - mIdleTime) / 1000;
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
@@ -165,6 +201,8 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
         mVideoEncoder.start();
         mState = State.RUNNING;
         mStartTime = SystemClock.elapsedRealtimeNanos();
+        mEarliestTime = mStartTime;
+        mIdleTime = 0;
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
@@ -176,7 +214,8 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
         mAudioRecorder.start();
         mVideoRecorder.start();
         mState = State.RUNNING;
-        mStartTime += (SystemClock.elapsedRealtimeNanos() - mPauseTime);
+        mResumeTime = SystemClock.elapsedRealtimeNanos();
+        mIdleTime += (mResumeTime - mPauseTime);
     }
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
@@ -189,6 +228,7 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
         mVideoRecorder.stop();
         mState = State.PAUSED;
         mPauseTime = SystemClock.elapsedRealtimeNanos();
+        Log.d(TAG, "pause: " + (mPauseTime - mStartTime - mIdleTime) / 1000_000_000f + "s");
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
