@@ -37,12 +37,14 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
     private CountDownLatch mCountDownLatch;
     private int mAudioTrackIndex;
     private int mVideoTrackIndex;
+    private long mTotalAudioRecordCount;
     private long mStartTime;
     private long mPauseTime;
-    private long mResumeTime;
-    private long mEarliestTime;
-    private long mIdleTime;
-    private long mTotalAudioRecordSize;
+    private long mPausePts;
+    private long mPauseDuration;
+    private long mIdleDuration;
+    private boolean mComputeStartIdleDuration;
+    private boolean mComputeResumeIdleDuration;
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
@@ -58,7 +60,6 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     private void configureAudio(AudioParam audioParam) {
         mAudioTrackIndex = -1;
-        mTotalAudioRecordSize = 0;
         mAudioEncoder.setCallback(new SyncCodec.Callback() {
             @Override
             public void onOutputFormatChanged(MediaFormat format) {
@@ -75,7 +76,23 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
         mAudioRecorder.setCallback(new AudioRecorder.Callback() {
             @Override
             public void onDataAvailable(byte[] data) {
-                mAudioEncoder.write(data, getAudioPts());
+                long oldCount = mTotalAudioRecordCount;
+                mTotalAudioRecordCount++;
+                long pts = getAudioPts();
+                long timePts = getTimePts();
+                long limit = mAudioRecorder.getMiniPtsDuration();
+                if (pts - timePts < -limit) {
+                    Log.e(TAG, "[audio]onDataAvailable: pts early!");
+                    mTotalAudioRecordCount++;
+                }
+                if (pts - timePts > limit) {
+                    Log.e(TAG, "[audio]onDataAvailable: pts late, discard!");
+                    mTotalAudioRecordCount--;
+                    return;
+                }
+                if (mTotalAudioRecordCount > oldCount) {
+                    mAudioEncoder.write(data, getAudioPts());
+                }
             }
 
             @Override
@@ -87,7 +104,7 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
     }
 
     private long getAudioPts() {
-        return mAudioRecorder.computePtsByCount(++mTotalAudioRecordSize);
+        return mAudioRecorder.computePtsByCount(mTotalAudioRecordCount);
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
@@ -143,11 +160,12 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        if (!isRunning()) {
-            Log.e(TAG, "writeIntoMuxer: invalid!");
+        long timePts = getTimePts();
+        if (mState == State.PAUSED && timePts > mPausePts / 1000) {
+            Log.e(TAG, (trackIndex == mAudioTrackIndex ? "[audio]" : "[video]") + "writeIntoMuxer: invalid, " +
+                    "because already paused, pausePts = " + mPausePts / 1000_000_000f + "s, timePts = " + timePts / 1000_000f + "s");
             return;
         }
-        long timePts = computeTimePts();
         if (trackIndex == mVideoTrackIndex) {
             bufferInfo.presentationTimeUs = timePts;
         }
@@ -159,33 +177,25 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
     }
 
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
-    private long computeTimePts() {
-        long timePts = getTimePts();
-        timePts = fixTimePts(timePts);
-        return timePts;
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
-    private synchronized long fixTimePts(long timePts) {
-        long oldTimePts = timePts;
-        if (mEarliestTime != 0) {
-            mStartTime += SystemClock.elapsedRealtimeNanos() - mEarliestTime;
-            timePts = getTimePts();
-            mEarliestTime = 0;
-            Log.e(TAG, "fixTimePts: when start, " + oldTimePts / 1000_000f + "s -> " + timePts / 1000_000f + "s");
-        }
-        if (mResumeTime != 0) {
-            mIdleTime += SystemClock.elapsedRealtimeNanos() - mResumeTime;
-            timePts = getTimePts();
-            mResumeTime = 0;
-            Log.e(TAG, "fixTimePts: when resume, " + oldTimePts / 1000_000f + "s -> " + timePts / 1000_000f + "s");
-        }
-        return timePts;
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
     private long getTimePts() {
-        return (SystemClock.elapsedRealtimeNanos() - mStartTime - mIdleTime) / 1000;
+        if (mComputeStartIdleDuration || mComputeResumeIdleDuration) {
+            computeIdleDuration();
+        }
+        return (SystemClock.elapsedRealtimeNanos() - mStartTime - mIdleDuration) / 1000;
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
+    private synchronized void computeIdleDuration() {
+        if (mComputeStartIdleDuration) {
+            mIdleDuration = SystemClock.elapsedRealtimeNanos() - mStartTime;
+            Log.d(TAG, "computeIdleDuration: start, " + mIdleDuration / 1000_000_000f + "s");
+            mComputeStartIdleDuration = false;
+        }
+        if (mComputeResumeIdleDuration) {
+            mIdleDuration = SystemClock.elapsedRealtimeNanos() - mStartTime - mPausePts;
+            Log.d(TAG, "computeIdleDuration: resume, " + mIdleDuration / 1000_000_000f + "s");
+            mComputeResumeIdleDuration = false;
+        }
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
@@ -201,8 +211,10 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
         mVideoEncoder.start();
         mState = State.RUNNING;
         mStartTime = SystemClock.elapsedRealtimeNanos();
-        mEarliestTime = mStartTime;
-        mIdleTime = 0;
+        mComputeStartIdleDuration = true;
+        mTotalAudioRecordCount = -1;
+        mPauseDuration = 0;
+        mIdleDuration = 0;
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
@@ -214,8 +226,9 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
         mAudioRecorder.start();
         mVideoRecorder.start();
         mState = State.RUNNING;
-        mResumeTime = SystemClock.elapsedRealtimeNanos();
-        mIdleTime += (mResumeTime - mPauseTime);
+        mComputeResumeIdleDuration = true;
+        mPauseDuration += SystemClock.elapsedRealtimeNanos() - mPauseTime;
+        Log.d(TAG, "resume: pause duration = " + mPauseDuration / 1000_000_000f + "s");
     }
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
@@ -228,7 +241,8 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
         mVideoRecorder.stop();
         mState = State.PAUSED;
         mPauseTime = SystemClock.elapsedRealtimeNanos();
-        Log.d(TAG, "pause: " + (mPauseTime - mStartTime - mIdleTime) / 1000_000_000f + "s");
+        mPausePts = mPauseTime - mStartTime - mPauseDuration;
+        Log.d(TAG, "pause: pts = " + mPausePts / 1000_000_000f + "s");
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)

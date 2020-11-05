@@ -81,6 +81,10 @@ public class AudioRecorder extends Worker1<AudioRecorder.Param> {
         mState = State.RELEASED;
     }
 
+    public long getMiniPtsDuration() {
+        return computePtsByCount(1);
+    }
+
     public long computePtsByCount(long count) {
         return computePtsBySize(mBufferSizeInBytes * count);
     }

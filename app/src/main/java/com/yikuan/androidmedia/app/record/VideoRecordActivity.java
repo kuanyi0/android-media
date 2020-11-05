@@ -28,6 +28,7 @@ public class VideoRecordActivity extends AppCompatActivity implements View.OnCli
     private static final int SCREEN_RECORDER = 2;
     private int mRecorder = SCREEN_RECORDER;
     private long mStartTime;
+    private long mPauseTime;
     private long mPauseDuration;
     private ActivityVideoRecordBinding mBinding;
     private MediaProjectionService mService;
@@ -124,8 +125,9 @@ public class VideoRecordActivity extends AppCompatActivity implements View.OnCli
 
     private void resume() {
         mService.resume();
-        mStartTime = SystemClock.elapsedRealtime();
-        mBinding.chronometer.setBase(SystemClock.elapsedRealtime() - mPauseDuration);
+        mPauseDuration += SystemClock.elapsedRealtime() - mPauseTime;
+        Log.d(TAG, "resume: " + getDuration());
+        mBinding.chronometer.setBase(mStartTime + mPauseDuration);
         mBinding.chronometer.start();
         mBinding.btnResume.setEnabled(false);
         mBinding.btnPause.setEnabled(true);
@@ -133,19 +135,26 @@ public class VideoRecordActivity extends AppCompatActivity implements View.OnCli
 
     private void pause() {
         mService.pause();
-        mPauseDuration += SystemClock.elapsedRealtime() - mStartTime;
+        Log.d(TAG, "pause: " + getDuration());
+        mPauseTime = SystemClock.elapsedRealtime();
         mBinding.chronometer.stop();
         mBinding.btnResume.setEnabled(true);
         mBinding.btnPause.setEnabled(false);
     }
 
     private void stop() {
-        unbindService(mConnection);
+        mService.stop();
+        Log.d(TAG, "stop: " + getDuration());
         mBinding.chronometer.stop();
         mBinding.btnStart.setEnabled(true);
         mBinding.btnResume.setEnabled(false);
         mBinding.btnPause.setEnabled(false);
         mBinding.btnStop.setEnabled(false);
+        unbindService(mConnection);
+    }
+
+    private long getDuration() {
+        return SystemClock.elapsedRealtime() - mStartTime - mPauseDuration;
     }
 
     @Override
