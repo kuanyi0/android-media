@@ -107,5 +107,32 @@ public abstract class BaseCodec<T extends BaseCodec.Param> extends Worker1<T> {
          * @see MediaFormat#MIMETYPE_VIDEO_AVC
          */
         public String type;
+
+        protected Param(String type) {
+            this.type = type;
+        }
+
+        public static class Builder<T extends Param> {
+            protected T param;
+
+            protected Builder(Class<T> cls) {
+                try {
+                    param = cls.newInstance();
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                } catch (InstantiationException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            public Builder<T> setType(String type) {
+                param.type = type;
+                return this;
+            }
+
+            public T build() {
+                return param;
+            }
+        }
     }
 }

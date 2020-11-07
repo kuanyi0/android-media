@@ -1,7 +1,13 @@
 package com.yikuan.androidmedia.record;
 
+import android.annotation.SuppressLint;
+import android.media.AudioFormat;
 import android.media.MediaCodec;
+import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
+import android.media.MediaMuxer;
+import android.media.MediaRecorder;
+import android.media.projection.MediaProjection;
 import android.os.Build;
 import android.os.SystemClock;
 import android.util.Log;
@@ -9,6 +15,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 
+import com.yikuan.androidcommon.util.ScreenUtils;
 import com.yikuan.androidmedia.base.State;
 import com.yikuan.androidmedia.base.Worker3;
 import com.yikuan.androidmedia.codec.SyncCodec;
@@ -37,7 +44,9 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
     private CountDownLatch mCountDownLatch;
     private int mAudioTrackIndex;
     private int mVideoTrackIndex;
+    private volatile int mAudioCountOffset;
     private long mTotalAudioRecordCount;
+    private long mAudioMiniPtsDuration;
     private long mStartTime;
     private long mPauseTime;
     private long mPausePts;
@@ -45,6 +54,35 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
     private long mIdleDuration;
     private boolean mComputeStartIdleDuration;
     private boolean mComputeResumeIdleDuration;
+
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    public void configure(Param param) {
+        AudioRecorder.Param audioRecordParam = new AudioRecorder.Param(param.audioSource,
+                param.sampleRateInHz, param.channelConfig, param.audioFormat);
+        AudioEncodeParam audioEncodeParam = new AudioEncodeParam.Builder()
+                .setSampleRate(param.sampleRateInHz)
+                .setChannel(audioRecordParam.getChannel())
+                .setBitRate(param.audioBitRate)
+                .setMaxInputSize(audioRecordParam.getMiniBufferSize())
+                .setAacProfile(param.aacProfile)
+                .build();
+        AudioParam audioParam = new AudioParam(audioRecordParam, audioEncodeParam);
+
+        ProjectionParam projectionParam = new ProjectionParam(param.projection,
+                ScreenUtils.getScreenDpi(), ScreenUtils.getScreenWidth(), ScreenUtils.getScreenHeight());
+        VideoEncodeParam videoEncodeParam = new VideoEncodeParam.Builder()
+                .setWidth(param.width)
+                .setHeight(param.height)
+                .setBitrate(param.videoBitRate)
+                .setColorFormat(param.colorFormat)
+                .setFrameRate(param.frameRate)
+                .setIFrameInterval(param.iFrameInterval)
+                .build();
+        VideoParam videoParam = new VideoParam(projectionParam, videoEncodeParam);
+
+        MediaMuxerHelper.Param muxerParam = new MediaMuxerHelper.Param(param.path, param.format);
+        configure(audioParam, videoParam, muxerParam);
+    }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
@@ -76,23 +114,19 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
         mAudioRecorder.setCallback(new AudioRecorder.Callback() {
             @Override
             public void onDataAvailable(byte[] data) {
-                long oldCount = mTotalAudioRecordCount;
                 mTotalAudioRecordCount++;
-                long pts = getAudioPts();
-                long timePts = getTimePts();
-                long limit = mAudioRecorder.getMiniPtsDuration();
-                if (pts - timePts < -limit) {
-                    Log.e(TAG, "[audio]onDataAvailable: pts early!");
-                    mTotalAudioRecordCount++;
+                if (mAudioCountOffset < 0) {
+                    Log.e(TAG, "[audio]onDataAvailable: pts early " + mAudioCountOffset + ", catch up!");
+                    mTotalAudioRecordCount -= mAudioCountOffset;
+                    mAudioCountOffset = 0;
                 }
-                if (pts - timePts > limit) {
-                    Log.e(TAG, "[audio]onDataAvailable: pts late, discard!");
+                if (mAudioCountOffset > 0) {
+                    Log.e(TAG, "[audio]onDataAvailable: pts late " + mAudioCountOffset + ", discard!");
                     mTotalAudioRecordCount--;
+                    mAudioCountOffset = 0;
                     return;
                 }
-                if (mTotalAudioRecordCount > oldCount) {
-                    mAudioEncoder.write(data, getAudioPts());
-                }
+                mAudioEncoder.write(data, getAudioPts());
             }
 
             @Override
@@ -101,6 +135,7 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
             }
         });
         mAudioRecorder.configure(audioParam.recordParam);
+        mAudioMiniPtsDuration = mAudioRecorder.getMiniPtsDuration();
     }
 
     private long getAudioPts() {
@@ -166,7 +201,15 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
                     "because already paused, pausePts = " + mPausePts / 1000_000_000f + "s, timePts = " + timePts / 1000_000f + "s");
             return;
         }
+        if (trackIndex == mAudioTrackIndex) {
+            long audioPts = bufferInfo.presentationTimeUs;
+            mAudioCountOffset = (int) ((audioPts - timePts) / mAudioMiniPtsDuration);
+        }
         if (trackIndex == mVideoTrackIndex) {
+            if (mComputeStartIdleDuration || mComputeResumeIdleDuration) {
+                computeIdleDuration();
+                timePts = getTimePts();
+            }
             bufferInfo.presentationTimeUs = timePts;
         }
         Log.d(TAG, (trackIndex == mAudioTrackIndex ? "[audio]" : "[video]") + "writeIntoMuxer: size = " +
@@ -178,9 +221,6 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
 
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
     private long getTimePts() {
-        if (mComputeStartIdleDuration || mComputeResumeIdleDuration) {
-            computeIdleDuration();
-        }
         return (SystemClock.elapsedRealtimeNanos() - mStartTime - mIdleDuration) / 1000;
     }
 
@@ -291,6 +331,96 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
         public VideoParam(ProjectionParam projectionParam, VideoEncodeParam encodeParam) {
             this.projectionParam = projectionParam;
             this.encodeParam = encodeParam;
+        }
+    }
+
+    public static class Param {
+        // See AudioRecorder.Param and AudioEncodeParam
+        private int audioSource = MediaRecorder.AudioSource.MIC;
+        private int sampleRateInHz = 44100;
+        private int channelConfig = AudioFormat.CHANNEL_IN_MONO;
+        private int audioFormat = AudioFormat.ENCODING_PCM_16BIT;
+        private int audioBitRate = 64000;
+        private int aacProfile = MediaCodecInfo.CodecProfileLevel.AACObjectLC;
+
+        // See ProjectionParam and VideoEncodeParam
+        private MediaProjection projection;
+        private int width = 1080;
+        private int height = 1920;
+        private int videoBitRate = 8 * 1024 * 1024;
+        @SuppressLint("InlinedApi")
+        private int colorFormat = MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface;
+        private int frameRate = 30;
+        private int iFrameInterval = 1;
+
+        // See MediaMuxerHelper.Param
+        private String path;
+        @SuppressLint("InlinedApi")
+        private int format = MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4;
+
+        public Param(MediaProjection projection, String path) {
+            this.projection = projection;
+            this.path = path;
+        }
+
+        public void setAudioSource(int audioSource) {
+            this.audioSource = audioSource;
+        }
+
+        public void setSampleRateInHz(int sampleRateInHz) {
+            this.sampleRateInHz = sampleRateInHz;
+        }
+
+        public void setChannelConfig(int channelConfig) {
+            this.channelConfig = channelConfig;
+        }
+
+        public void setAudioFormat(int audioFormat) {
+            this.audioFormat = audioFormat;
+        }
+
+        public void setAudioBitRate(int audioBitRate) {
+            this.audioBitRate = audioBitRate;
+        }
+
+        public void setAacProfile(int aacProfile) {
+            this.aacProfile = aacProfile;
+        }
+
+        public void setProjection(MediaProjection projection) {
+            this.projection = projection;
+        }
+
+        public void setWidth(int width) {
+            this.width = width;
+        }
+
+        public void setHeight(int height) {
+            this.height = height;
+        }
+
+        public void setVideoBitRate(int videoBitRate) {
+            this.videoBitRate = videoBitRate;
+        }
+
+        public void setColorFormat(int colorFormat) {
+            this.colorFormat = colorFormat;
+        }
+
+        public void setFrameRate(int frameRate) {
+            this.frameRate = frameRate;
+        }
+
+        public void setIFrameInterval(int iFrameInterval) {
+            this.iFrameInterval = iFrameInterval;
+        }
+
+        public void setPath(String path) {
+            this.path = path;
+        }
+
+        public void setFormat(int format) {
+            this.format = format;
         }
     }
 }

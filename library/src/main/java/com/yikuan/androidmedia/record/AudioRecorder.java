@@ -90,8 +90,8 @@ public class AudioRecorder extends Worker1<AudioRecorder.Param> {
     }
 
     public long computePtsBySize(long size) {
-        int bit = mParam.audioFormat == AudioFormat.ENCODING_PCM_16BIT ? 16 : 8;
-        int channel = mParam.channelConfig == AudioFormat.CHANNEL_IN_STEREO ? 2 : 1;
+        int bit = mParam.getBit();
+        int channel = mParam.getChannel();
         return size * 1000_000 / (mParam.sampleRateInHz * bit * channel / 8);
     }
 
@@ -146,6 +146,18 @@ public class AudioRecorder extends Worker1<AudioRecorder.Param> {
             this.sampleRateInHz = sampleRateInHz;
             this.channelConfig = channelConfig;
             this.audioFormat = audioFormat;
+        }
+
+        public int getChannel() {
+            return channelConfig == AudioFormat.CHANNEL_IN_STEREO ? 2 : 1;
+        }
+
+        public int getBit() {
+            return audioFormat == AudioFormat.ENCODING_PCM_16BIT ? 16 : 8;
+        }
+
+        public int getMiniBufferSize() {
+            return AudioRecord.getMinBufferSize(sampleRateInHz, channelConfig, audioFormat);
         }
     }
 

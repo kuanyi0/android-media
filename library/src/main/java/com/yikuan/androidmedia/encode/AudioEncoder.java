@@ -1,6 +1,5 @@
 package com.yikuan.androidmedia.encode;
 
-import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
 
 import com.yikuan.androidmedia.codec.SyncCodec;
@@ -10,7 +9,6 @@ import com.yikuan.androidmedia.codec.SyncCodec;
  * @date 2020/09/21
  */
 public class AudioEncoder extends SyncCodec<AudioEncodeParam> {
-    public static int MAX_INPUT_SIZE = 4 * 1024;
 
     @Override
     protected boolean isEncoder() {
@@ -22,9 +20,9 @@ public class AudioEncoder extends SyncCodec<AudioEncodeParam> {
         MediaFormat mediaFormat = MediaFormat.createAudioFormat(mParam.type, mParam.sampleRate, mParam.channel);
         mediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, mParam.bitRate);
         // Optional
-        mediaFormat.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, MAX_INPUT_SIZE);
+        mediaFormat.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, mParam.maxInputSize);
         // Optional
-        mediaFormat.setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC);
+        mediaFormat.setInteger(MediaFormat.KEY_AAC_PROFILE, mParam.aacProfile);
         return mediaFormat;
     }
 }

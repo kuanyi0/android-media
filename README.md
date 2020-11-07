@@ -3,7 +3,7 @@
 ## Download
 Gradle:
 ```
-implementation 'com.kimyi:android-media:0.0.2'
+implementation 'com.kimyi:android-media:0.0.3'
 ```
 
 ## Feature

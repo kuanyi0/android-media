@@ -41,7 +41,7 @@ public class AudioEncodeActivity extends AppCompatActivity implements View.OnCli
     private ActivityAudioEncodeBinding mBinding;
     private AudioEncoder mAudioEncoder;
     private AudioEncoder2 mAudioEncoder2;
-    private AudioEncodeParam mParam = new AudioEncodeParam(MediaFormat.MIMETYPE_AUDIO_AAC, 44100, 1, 96000);
+    private AudioEncodeParam mParam = new AudioEncodeParam.Builder().build();
     private File mSourceFile;
 
     @Override
@@ -164,7 +164,7 @@ public class AudioEncodeActivity extends AppCompatActivity implements View.OnCli
         if (mAudioEncoder != null) {
             mAudioEncoder.start();
             ThreadPoolManager.getInstance().execute(new Runnable() {
-                byte[] data = new byte[AudioEncoder.MAX_INPUT_SIZE];
+                byte[] data = new byte[AudioEncodeParam.MAX_INPUT_SIZE];
 
                 @Override
                 public void run() {
