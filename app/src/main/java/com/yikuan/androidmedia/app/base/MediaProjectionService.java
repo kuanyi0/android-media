@@ -1,6 +1,8 @@
 package com.yikuan.androidmedia.app.base;
 
 import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -23,13 +25,20 @@ import java.util.Objects;
 public abstract class MediaProjectionService extends Service {
     public static final String RESULT_CODE = "resultCode";
     public static final String RESULT_DATA = "resultData";
+    private static final String CHANNEL_ID = "channel_id";
+    private static final String CHANNEL_NAME = "channel_name";
     protected MediaProjection mMediaProjection;
     private MediaProjectionBinder mBinder = new MediaProjectionBinder();
 
     @Override
     public void onCreate() {
         super.onCreate();
-        Notification notification = new NotificationCompat.Builder(this, "").build();
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_DEFAULT);
+            NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+            manager.createNotificationChannel(channel);
+        }
+        Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID).build();
         startForeground(1, notification);
     }
 

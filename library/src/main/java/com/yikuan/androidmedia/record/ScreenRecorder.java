@@ -16,6 +16,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 
 import com.yikuan.androidcommon.util.ScreenUtils;
+import com.yikuan.androidmedia.BuildConfig;
 import com.yikuan.androidmedia.base.State;
 import com.yikuan.androidmedia.base.Worker3;
 import com.yikuan.androidmedia.codec.SyncCodec;
@@ -44,7 +45,7 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
     private CountDownLatch mCountDownLatch;
     private int mAudioTrackIndex;
     private int mVideoTrackIndex;
-    private volatile int mAudioCountOffset;
+    private int mAudioCountOffset;
     private long mTotalAudioRecordCount;
     private long mAudioMiniPtsDuration;
     private long mStartTime;
@@ -123,7 +124,7 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
                 if (mAudioCountOffset > 0) {
                     Log.e(TAG, "[audio]onDataAvailable: pts late " + mAudioCountOffset + ", discard!");
                     mTotalAudioRecordCount--;
-                    mAudioCountOffset = 0;
+                    mAudioCountOffset--;
                     return;
                 }
                 mAudioEncoder.write(data, getAudioPts());
@@ -190,10 +191,13 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
 
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
     private void writeIntoMuxer(int trackIndex, ByteBuffer byteBuffer, MediaCodec.BufferInfo bufferInfo) {
-        try {
-            mCountDownLatch.await();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        if (mCountDownLatch != null) {
+            try {
+                mCountDownLatch.await();
+                mCountDownLatch = null;
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
         long timePts = getTimePts();
         if (mState == State.PAUSED && timePts > mPausePts / 1000) {
@@ -212,10 +216,12 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
             }
             bufferInfo.presentationTimeUs = timePts;
         }
-        Log.d(TAG, (trackIndex == mAudioTrackIndex ? "[audio]" : "[video]") + "writeIntoMuxer: size = " +
-                bufferInfo.size + ", offset = " + bufferInfo.offset + ", flags = " + bufferInfo.flags +
-                ", pts = [" + timePts / 1000_000f + "s / " + bufferInfo.presentationTimeUs / 1000_000f +
-                "s, delta = " + (bufferInfo.presentationTimeUs - timePts) / 1000_000f + "s]");
+        if (BuildConfig.DEBUG) {
+            Log.d(TAG, (trackIndex == mAudioTrackIndex ? "[audio]" : "[video]") + "writeIntoMuxer: size = " +
+                    bufferInfo.size + ", offset = " + bufferInfo.offset + ", flags = " + bufferInfo.flags +
+                    ", pts = [" + timePts / 1000_000f + "s / " + bufferInfo.presentationTimeUs / 1000_000f +
+                    "s, delta = " + (bufferInfo.presentationTimeUs - timePts) / 1000_000f + "s]");
+        }
         mMediaMuxerHelper.write(trackIndex, byteBuffer, bufferInfo);
     }
 
