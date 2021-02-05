@@ -45,7 +45,7 @@ public class AudioEncodeParam extends BaseCodec.Param {
      * 128000
      *
      * sampleRate * bit * channel / 18
-     * eg. 44100 * 16 * 2 / 18 = 78400
+     * e.g. 44100 * 16 * 2 / 18 = 78400
      */
     int bitRate = BIT_RATE;
     /**

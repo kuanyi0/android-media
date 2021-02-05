@@ -63,6 +63,30 @@ public class MediaCodecUtils {
         return decoders;
     }
 
+    public static List<MediaCodecInfo> getEncoders(String mimeType) {
+        List<MediaCodecInfo> list = new ArrayList<>();
+        List<MediaCodecInfo> encoders = getEncoders();
+        for (MediaCodecInfo info : encoders) {
+            MediaCodecInfo.CodecCapabilities capabilities = info.getCapabilitiesForType(mimeType);
+            if (capabilities != null) {
+                list.add(info);
+            }
+        }
+        return list;
+    }
+
+    public static List<MediaCodecInfo> getDecoders(String mimeType) {
+        List<MediaCodecInfo> list = new ArrayList<>();
+        List<MediaCodecInfo> decoders = getDecoders();
+        for (MediaCodecInfo info : decoders) {
+            MediaCodecInfo.CodecCapabilities capabilities = info.getCapabilitiesForType(mimeType);
+            if (capabilities != null) {
+                list.add(info);
+            }
+        }
+        return list;
+    }
+
     public static List<MediaFormat> getMediaFormat(File file) {
         List<MediaFormat> list = new ArrayList<>();
         MediaExtractor extractor = new MediaExtractor();

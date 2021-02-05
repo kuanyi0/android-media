@@ -251,6 +251,7 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
             return;
         }
         checkCurrentStateInStates(State.CONFIGURED);
+        mTotalAudioRecordCount = -1;
         mAudioRecorder.start();
         mVideoRecorder.start();
         mAudioEncoder.start();
@@ -258,7 +259,6 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
         mState = State.RUNNING;
         mStartTime = SystemClock.elapsedRealtimeNanos();
         mComputeStartIdleDuration = true;
-        mTotalAudioRecordCount = -1;
         mPauseDuration = 0;
         mIdleDuration = 0;
     }

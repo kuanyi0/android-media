@@ -83,7 +83,9 @@ public class AudioEncodeActivity extends AppCompatActivity implements View.OnCli
 
             @Override
             public void onOutputBufferAvailable(int index, ByteBuffer byteBuffer, MediaCodec.BufferInfo bufferInfo) {
-                Log.d(TAG, "onOutputBufferAvailable: " + byteBuffer);
+                // pts: 以传入pts开始，以 1024 * 1000_000 / sampleRate 间隔递增
+                Log.d(TAG, "onOutputBufferAvailable: flag = " + bufferInfo.flags + ", pts = " + bufferInfo.presentationTimeUs
+                        + ", size = " + bufferInfo.size + ", offset = " + bufferInfo.offset);
             }
         });
     }

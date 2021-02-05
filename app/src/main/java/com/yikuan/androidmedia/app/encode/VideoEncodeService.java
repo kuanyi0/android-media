@@ -5,6 +5,7 @@ import android.hardware.display.VirtualDisplay;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.os.Build;
+import android.os.SystemClock;
 import android.util.Log;
 import android.view.Surface;
 
@@ -58,7 +59,9 @@ public class VideoEncodeService extends MediaProjectionService {
 
             @Override
             public void onOutputBufferAvailable(int index, ByteBuffer byteBuffer, MediaCodec.BufferInfo bufferInfo) {
-                Log.d(TAG, "onOutputBufferAvailable: ");
+                // pts: 略小于 SystemClock.elapsedRealtimeNanos() / 1000
+                Log.d(TAG, "onOutputBufferAvailable: flag = " + bufferInfo.flags + ", pts = " + bufferInfo.presentationTimeUs
+                        + ", size = " + bufferInfo.size + ", offset = " + bufferInfo.offset);
             }
         });
     }

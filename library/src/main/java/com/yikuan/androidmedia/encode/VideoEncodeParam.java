@@ -62,7 +62,7 @@ public class VideoEncodeParam extends BaseCodec.Param {
      *
      * 1
      * iFrameInterval * frameRate
-     * eg. 30 * 1 frames
+     * e.g. 30 * 1 frames
      */
     int iFrameInterval = I_FRAME_INTERVAL;
 
