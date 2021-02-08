@@ -11,6 +11,7 @@ import com.yikuan.androidmedia.base.State;
 import com.yikuan.androidmedia.base.Worker1;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 /**
  * @author yikuan
@@ -60,6 +61,19 @@ public abstract class BaseCodec<T extends BaseCodec.Param> extends Worker1<T> {
         }
         mMediaCodec.start();
         mState = State.RUNNING;
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    public synchronized ByteBuffer read(int index, MediaCodec.BufferInfo bufferInfo) {
+        if (!isRunning()) {
+            return null;
+        }
+        if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
+            bufferInfo.size = 0;
+        }
+        ByteBuffer outputBuffer = mMediaCodec.getOutputBuffer(index);
+        mMediaCodec.releaseOutputBuffer(index, false);
+        return bufferInfo.size > 0 ? outputBuffer : null;
     }
 
     @Override

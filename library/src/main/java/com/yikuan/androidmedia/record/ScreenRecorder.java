@@ -1,13 +1,7 @@
 package com.yikuan.androidmedia.record;
 
-import android.annotation.SuppressLint;
-import android.media.AudioFormat;
 import android.media.MediaCodec;
-import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
-import android.media.MediaMuxer;
-import android.media.MediaRecorder;
-import android.media.projection.MediaProjection;
 import android.os.Build;
 import android.os.SystemClock;
 import android.util.Log;
@@ -18,7 +12,7 @@ import androidx.annotation.RequiresApi;
 import com.yikuan.androidcommon.util.ScreenUtils;
 import com.yikuan.androidmedia.BuildConfig;
 import com.yikuan.androidmedia.base.State;
-import com.yikuan.androidmedia.base.Worker3;
+import com.yikuan.androidmedia.base.Worker1;
 import com.yikuan.androidmedia.codec.SyncCodec;
 import com.yikuan.androidmedia.encode.AudioEncodeParam;
 import com.yikuan.androidmedia.encode.AudioEncoder;
@@ -33,7 +27,7 @@ import java.util.concurrent.CountDownLatch;
  * @author yikuan
  * @date 2020/10/22
  */
-public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRecorder.VideoParam, MediaMuxerHelper.Param> {
+public class ScreenRecorder extends Worker1<ScreenRecordParam> {
     private static final String TAG = "ScreenRecorder";
     private static final int TRACK_AUDIO = 1;
     private static final int TRACK_VIDEO = 2;
@@ -57,17 +51,18 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
     private boolean mComputeResumeIdleDuration;
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-    public void configure(Param param) {
+    @Override
+    public void configure(ScreenRecordParam param) {
         AudioRecorder.Param audioRecordParam = new AudioRecorder.Param(param.audioSource,
                 param.sampleRateInHz, param.channelConfig, param.audioFormat);
         AudioEncodeParam audioEncodeParam = new AudioEncodeParam.Builder()
                 .setSampleRate(param.sampleRateInHz)
                 .setChannel(audioRecordParam.getChannel())
                 .setBitRate(param.audioBitRate)
-                .setMaxInputSize(audioRecordParam.getMiniBufferSize())
+                .setMaxInputSize(audioRecordParam.getBufferSizeInBytes())
                 .setAacProfile(param.aacProfile)
                 .build();
-        AudioParam audioParam = new AudioParam(audioRecordParam, audioEncodeParam);
+        ScreenRecordParam.AudioParam audioParam = new ScreenRecordParam.AudioParam(audioRecordParam, audioEncodeParam);
 
         ProjectionParam projectionParam = new ProjectionParam(param.projection,
                 ScreenUtils.getScreenDpi(), ScreenUtils.getScreenWidth(), ScreenUtils.getScreenHeight());
@@ -79,15 +74,14 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
                 .setFrameRate(param.frameRate)
                 .setIFrameInterval(param.iFrameInterval)
                 .build();
-        VideoParam videoParam = new VideoParam(projectionParam, videoEncodeParam);
+        ScreenRecordParam.VideoParam videoParam = new ScreenRecordParam.VideoParam(projectionParam, videoEncodeParam);
 
         MediaMuxerHelper.Param muxerParam = new MediaMuxerHelper.Param(param.path, param.format);
         configure(audioParam, videoParam, muxerParam);
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-    @Override
-    public void configure(AudioParam audioParam, VideoParam videoParam, MediaMuxerHelper.Param muxerParam) {
+    public void configure(ScreenRecordParam.AudioParam audioParam, ScreenRecordParam.VideoParam videoParam, MediaMuxerHelper.Param muxerParam) {
         checkCurrentStateInStates(State.UNINITIALIZED);
         configureAudio(audioParam);
         configureVideo(videoParam);
@@ -97,7 +91,7 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-    private void configureAudio(AudioParam audioParam) {
+    private void configureAudio(ScreenRecordParam.AudioParam audioParam) {
         mAudioTrackIndex = -1;
         mAudioEncoder.setCallback(new SyncCodec.Callback() {
             @Override
@@ -112,17 +106,19 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
             }
         });
         mAudioEncoder.configure(audioParam.encodeParam);
+        mTotalAudioRecordCount = -1;
+        mAudioCountOffset = 0;
         mAudioRecorder.setCallback(new AudioRecorder.Callback() {
             @Override
             public void onDataAvailable(byte[] data) {
                 mTotalAudioRecordCount++;
                 if (mAudioCountOffset < 0) {
-                    Log.e(TAG, "[audio]onDataAvailable: pts early " + mAudioCountOffset + ", catch up!");
+                    Log.e(TAG, "[audio]onDataAvailable: pts late " + mAudioCountOffset + ", catch up!");
                     mTotalAudioRecordCount -= mAudioCountOffset;
                     mAudioCountOffset = 0;
                 }
                 if (mAudioCountOffset > 0) {
-                    Log.e(TAG, "[audio]onDataAvailable: pts late " + mAudioCountOffset + ", discard!");
+                    Log.e(TAG, "[audio]onDataAvailable: pts early " + mAudioCountOffset + ", discard!");
                     mTotalAudioRecordCount--;
                     mAudioCountOffset--;
                     return;
@@ -136,7 +132,7 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
             }
         });
         mAudioRecorder.configure(audioParam.recordParam);
-        mAudioMiniPtsDuration = mAudioRecorder.getMiniPtsDuration();
+        mAudioMiniPtsDuration = mAudioRecorder.getPtsPerSample();
     }
 
     private long getAudioPts() {
@@ -144,7 +140,7 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-    private void configureVideo(VideoParam videoParam) {
+    private void configureVideo(ScreenRecordParam.VideoParam videoParam) {
         mVideoTrackIndex = -1;
         mVideoEncoder.setCallback(new MediaCodec.Callback() {
             @Override
@@ -251,7 +247,6 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
             return;
         }
         checkCurrentStateInStates(State.CONFIGURED);
-        mTotalAudioRecordCount = -1;
         mAudioRecorder.start();
         mVideoRecorder.start();
         mAudioEncoder.start();
@@ -318,115 +313,5 @@ public class ScreenRecorder extends Worker3<ScreenRecorder.AudioParam, ScreenRec
         mAudioRecorder.release();
         mVideoRecorder.release();
         mState = State.RELEASED;
-    }
-
-    public static class AudioParam {
-        private AudioRecorder.Param recordParam;
-        private AudioEncodeParam encodeParam;
-
-        public AudioParam(AudioRecorder.Param recordParam, AudioEncodeParam encodeParam) {
-            this.recordParam = recordParam;
-            this.encodeParam = encodeParam;
-        }
-    }
-
-    public static class VideoParam {
-        private ProjectionParam projectionParam;
-        private VideoEncodeParam encodeParam;
-
-        public VideoParam(ProjectionParam projectionParam, VideoEncodeParam encodeParam) {
-            this.projectionParam = projectionParam;
-            this.encodeParam = encodeParam;
-        }
-    }
-
-    public static class Param {
-        // See AudioRecorder.Param and AudioEncodeParam
-        private int audioSource = MediaRecorder.AudioSource.MIC;
-        private int sampleRateInHz = 44100;
-        private int channelConfig = AudioFormat.CHANNEL_IN_MONO;
-        private int audioFormat = AudioFormat.ENCODING_PCM_16BIT;
-        private int audioBitRate = 64000;
-        private int aacProfile = MediaCodecInfo.CodecProfileLevel.AACObjectLC;
-
-        // See ProjectionParam and VideoEncodeParam
-        private MediaProjection projection;
-        private int width = 1080;
-        private int height = 1920;
-        private int videoBitRate = 8 * 1024 * 1024;
-        @SuppressLint("InlinedApi")
-        private int colorFormat = MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface;
-        private int frameRate = 30;
-        private int iFrameInterval = 1;
-
-        // See MediaMuxerHelper.Param
-        private String path;
-        @SuppressLint("InlinedApi")
-        private int format = MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4;
-
-        public Param(MediaProjection projection, String path) {
-            this.projection = projection;
-            this.path = path;
-        }
-
-        public void setAudioSource(int audioSource) {
-            this.audioSource = audioSource;
-        }
-
-        public void setSampleRateInHz(int sampleRateInHz) {
-            this.sampleRateInHz = sampleRateInHz;
-        }
-
-        public void setChannelConfig(int channelConfig) {
-            this.channelConfig = channelConfig;
-        }
-
-        public void setAudioFormat(int audioFormat) {
-            this.audioFormat = audioFormat;
-        }
-
-        public void setAudioBitRate(int audioBitRate) {
-            this.audioBitRate = audioBitRate;
-        }
-
-        public void setAacProfile(int aacProfile) {
-            this.aacProfile = aacProfile;
-        }
-
-        public void setProjection(MediaProjection projection) {
-            this.projection = projection;
-        }
-
-        public void setWidth(int width) {
-            this.width = width;
-        }
-
-        public void setHeight(int height) {
-            this.height = height;
-        }
-
-        public void setVideoBitRate(int videoBitRate) {
-            this.videoBitRate = videoBitRate;
-        }
-
-        public void setColorFormat(int colorFormat) {
-            this.colorFormat = colorFormat;
-        }
-
-        public void setFrameRate(int frameRate) {
-            this.frameRate = frameRate;
-        }
-
-        public void setIFrameInterval(int iFrameInterval) {
-            this.iFrameInterval = iFrameInterval;
-        }
-
-        public void setPath(String path) {
-            this.path = path;
-        }
-
-        public void setFormat(int format) {
-            this.format = format;
-        }
     }
 }

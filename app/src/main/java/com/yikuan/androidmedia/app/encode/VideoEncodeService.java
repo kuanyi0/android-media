@@ -103,15 +103,7 @@ public class VideoEncodeService extends MediaProjectionService {
 
     private void startEncode() {
         if (mVideoEncoder != null) {
-            mVideoEncoder.start();
-            ThreadPoolManager.getInstance().execute(new Runnable() {
-                @Override
-                public void run() {
-                    while (mVideoEncoder.isRunning()) {
-                        mVideoEncoder.read();
-                    }
-                }
-            });
+            mVideoEncoder.startAndRead();
         } else {
             mVideoEncoder2.start();
         }

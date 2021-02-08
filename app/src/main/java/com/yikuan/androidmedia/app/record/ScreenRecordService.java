@@ -1,11 +1,14 @@
 package com.yikuan.androidmedia.app.record;
 
 import android.os.Build;
+
 import androidx.annotation.RequiresApi;
+
 import com.yikuan.androidcommon.util.DateUtils;
 import com.yikuan.androidmedia.app.Constant;
 import com.yikuan.androidmedia.app.base.MediaProjectionService;
-import com.yikuan.androidmedia.record.ScreenRecorder;
+import com.yikuan.androidmedia.record.ScreenRecordParam;
+import com.yikuan.androidmedia.record.ScreenRecorder2;
 
 /**
  * @author yikuan
@@ -13,13 +16,14 @@ import com.yikuan.androidmedia.record.ScreenRecorder;
  */
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class ScreenRecordService extends MediaProjectionService {
-    private ScreenRecorder mScreenRecorder = new ScreenRecorder();
+    private ScreenRecorder2 mScreenRecorder = new ScreenRecorder2();
 
     @Override
     protected void onStart() {
-        ScreenRecorder.Param param = new ScreenRecorder.Param(mMediaProjection, Constant.DIR_VIDEO_RECORD + "/" +
+        ScreenRecordParam param = new ScreenRecordParam(mMediaProjection, Constant.DIR_VIDEO_RECORD + "/" +
                 DateUtils.formatTimeFileName() + ".mp4");
         mScreenRecorder.configure(param);
+        mScreenRecorder.setCallback(mCallback);
     }
 
     @Override

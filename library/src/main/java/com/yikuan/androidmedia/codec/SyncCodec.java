@@ -5,6 +5,8 @@ import android.media.MediaFormat;
 import android.util.Log;
 
 import java.nio.ByteBuffer;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * @author yikuan
@@ -16,10 +18,30 @@ public abstract class SyncCodec<T extends BaseCodec.Param> extends BaseCodec<T> 
     private ByteBuffer[] mInputBuffers;
     private ByteBuffer[] mOutputBuffers;
     private MediaCodec.BufferInfo mOutputBufferInfo = new MediaCodec.BufferInfo();
+    private ExecutorService mExecutorService;
+    private ReadRunnable mReadRunnable;
     private Callback mCallback;
 
     @Override
     protected void prepare() {
+    }
+
+    public void setCallback(Callback callback) {
+        mCallback = callback;
+    }
+
+    public void startAndRead() {
+        start();
+        if (mCallback == null) {
+            return;
+        }
+        if (mExecutorService == null) {
+            mExecutorService = Executors.newSingleThreadExecutor();
+        }
+        if (mReadRunnable == null) {
+            mReadRunnable = new ReadRunnable();
+        }
+        mExecutorService.execute(mReadRunnable);
     }
 
     @Override
@@ -29,10 +51,6 @@ public abstract class SyncCodec<T extends BaseCodec.Param> extends BaseCodec<T> 
             mInputBuffers = mMediaCodec.getInputBuffers();
             mOutputBuffers = mMediaCodec.getOutputBuffers();
         }
-    }
-
-    public void setCallback(Callback callback) {
-        mCallback = callback;
     }
 
     public synchronized void write(byte[] data, long pts) {
@@ -91,6 +109,15 @@ public abstract class SyncCodec<T extends BaseCodec.Param> extends BaseCodec<T> 
             mCallback.onOutputBufferAvailable(index, outputBuffer, mOutputBufferInfo);
         }
         mMediaCodec.releaseOutputBuffer(index, false);
+    }
+
+    private class ReadRunnable implements Runnable {
+        @Override
+        public void run() {
+            while (isRunning()) {
+                read();
+            }
+        }
     }
 
     public interface Callback {

@@ -21,6 +21,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.yikuan.androidmedia.app.R;
 import com.yikuan.androidmedia.app.base.MediaProjectionService;
 import com.yikuan.androidmedia.app.databinding.ActivityVideoRecordBinding;
+import com.yikuan.androidmedia.record.ScreenRecorder2;
 
 public class VideoRecordActivity extends AppCompatActivity implements View.OnClickListener {
     private static final String TAG = "VideoRecordActivity";
@@ -38,6 +39,27 @@ public class VideoRecordActivity extends AppCompatActivity implements View.OnCli
             Log.d(TAG, "onServiceConnected: ");
             MediaProjectionService.MediaProjectionBinder binder = (MediaProjectionService.MediaProjectionBinder) service;
             mService = binder.getService();
+            mService.setCallback(new ScreenRecorder2.Callback() {
+                @Override
+                public void onStarted() {
+                    Log.d(TAG, "onStarted: ");
+                }
+
+                @Override
+                public void onResumed() {
+                    Log.d(TAG, "onResumed: ");
+                }
+
+                @Override
+                public void onPaused() {
+                    Log.d(TAG, "onPaused: ");
+                }
+
+                @Override
+                public void onStopped() {
+                    Log.d(TAG, "onStopped: ");
+                }
+            });
             internalStart();
         }
 

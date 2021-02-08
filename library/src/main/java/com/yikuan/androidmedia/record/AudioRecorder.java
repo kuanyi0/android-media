@@ -15,7 +15,6 @@ import java.util.concurrent.Executors;
  */
 public class AudioRecorder extends Worker1<AudioRecorder.Param> {
     private AudioRecord mAudioRecord;
-    private int mBufferSizeInBytes;
     private byte[] mAudioData;
     private ExecutorService mExecutorService;
     private Runnable mRecordRunnable;
@@ -25,9 +24,8 @@ public class AudioRecorder extends Worker1<AudioRecorder.Param> {
     @Override
     public void configure(Param param) {
         checkCurrentStateInStates(State.UNINITIALIZED);
-        mBufferSizeInBytes = AudioRecord.getMinBufferSize(param.sampleRateInHz, param.channelConfig, param.audioFormat);
-        mAudioRecord = new AudioRecord(param.audioSource, param.sampleRateInHz, param.channelConfig, param.audioFormat, mBufferSizeInBytes);
-        mAudioData = new byte[mBufferSizeInBytes];
+        mAudioRecord = new AudioRecord(param.audioSource, param.sampleRateInHz, param.channelConfig, param.audioFormat, param.bufferSizeInBytes);
+        mAudioData = new byte[param.bufferSizeInBytes];
         mParam = param;
         mState = State.CONFIGURED;
     }
@@ -81,18 +79,12 @@ public class AudioRecorder extends Worker1<AudioRecorder.Param> {
         mState = State.RELEASED;
     }
 
-    public long getMiniPtsDuration() {
-        return computePtsByCount(1);
+    public long getPtsPerSample() {
+        return mParam.getPtsPerSample();
     }
 
     public long computePtsByCount(long count) {
-        return computePtsBySize(mBufferSizeInBytes * count);
-    }
-
-    public long computePtsBySize(long size) {
-        int bit = mParam.getBit();
-        int channel = mParam.getChannel();
-        return size * 1000_000 / (mParam.sampleRateInHz * bit * channel / 8);
+        return mParam.computePtsByCount(count);
     }
 
     private class RecordRunnable implements Runnable {
@@ -140,12 +132,17 @@ public class AudioRecorder extends Worker1<AudioRecorder.Param> {
          * 低质量：{@link AudioFormat#ENCODING_PCM_8BIT}
          */
         private int audioFormat;
+        /**
+         * buffer大小
+         */
+        private int bufferSizeInBytes;
 
         public Param(int audioSource, int sampleRateInHz, int channelConfig, int audioFormat) {
             this.audioSource = audioSource;
             this.sampleRateInHz = sampleRateInHz;
             this.channelConfig = channelConfig;
             this.audioFormat = audioFormat;
+            this.bufferSizeInBytes = AudioRecord.getMinBufferSize(sampleRateInHz, channelConfig, audioFormat);
         }
 
         public int getChannel() {
@@ -156,8 +153,22 @@ public class AudioRecorder extends Worker1<AudioRecorder.Param> {
             return audioFormat == AudioFormat.ENCODING_PCM_16BIT ? 16 : 8;
         }
 
-        public int getMiniBufferSize() {
-            return AudioRecord.getMinBufferSize(sampleRateInHz, channelConfig, audioFormat);
+        public int getBufferSizeInBytes() {
+            return bufferSizeInBytes;
+        }
+
+        public long getPtsPerSample() {
+            return computePtsByCount(1);
+        }
+
+        public long computePtsByCount(long count) {
+            return computePtsBySize(bufferSizeInBytes * count);
+        }
+
+        public long computePtsBySize(long size) {
+            int bit = getBit();
+            int channel = getChannel();
+            return size * 1000_000 / (sampleRateInHz * bit * channel / 8);
         }
     }
 

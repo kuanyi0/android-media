@@ -16,6 +16,8 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationCompat;
 
+import com.yikuan.androidmedia.record.ScreenRecorder2;
+
 import java.util.Objects;
 
 /**
@@ -29,6 +31,7 @@ public abstract class MediaProjectionService extends Service {
     private static final String CHANNEL_NAME = "channel_name";
     protected MediaProjection mMediaProjection;
     private MediaProjectionBinder mBinder = new MediaProjectionBinder();
+    protected ScreenRecorder2.Callback mCallback;
 
     @Override
     public void onCreate() {
@@ -103,5 +106,9 @@ public abstract class MediaProjectionService extends Service {
     }
 
     public void stop() {
+    }
+
+    public void setCallback(ScreenRecorder2.Callback callback) {
+        mCallback = callback;
     }
 }

@@ -39,18 +39,4 @@ public abstract class AsyncCodec<T extends BaseCodec.Param> extends BaseCodec<T>
         inputBuffer.put(data, 0, data.length);
         mMediaCodec.queueInputBuffer(index, 0, data.length, pts, 0);
     }
-
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-    public synchronized ByteBuffer read(int index, MediaCodec.BufferInfo bufferInfo) {
-        if (!isRunning()) {
-            Log.e(TAG, "read: invalid!");
-            return null;
-        }
-        if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
-            bufferInfo.size = 0;
-        }
-        ByteBuffer outputBuffer = mMediaCodec.getOutputBuffer(index);
-        mMediaCodec.releaseOutputBuffer(index, false);
-        return bufferInfo.size > 0 ? outputBuffer : null;
-    }
 }
