@@ -8,7 +8,7 @@ import com.yikuan.androidcommon.util.DateUtils;
 import com.yikuan.androidmedia.app.Constant;
 import com.yikuan.androidmedia.app.base.MediaProjectionService;
 import com.yikuan.androidmedia.record.ScreenRecordParam;
-import com.yikuan.androidmedia.record.ScreenRecorder2;
+import com.yikuan.androidmedia.record.ScreenRecorder;
 
 /**
  * @author yikuan
@@ -16,19 +16,22 @@ import com.yikuan.androidmedia.record.ScreenRecorder2;
  */
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class ScreenRecordService extends MediaProjectionService {
-    private ScreenRecorder2 mScreenRecorder = new ScreenRecorder2();
+    private ScreenRecorder mScreenRecorder = new ScreenRecorder();
 
     @Override
     protected void onStart() {
         ScreenRecordParam param = new ScreenRecordParam(mMediaProjection, Constant.DIR_VIDEO_RECORD + "/" +
                 DateUtils.formatTimeFileName() + ".mp4");
         mScreenRecorder.configure(param);
-        mScreenRecorder.setCallback(mCallback);
     }
 
     @Override
     protected void onStop() {
         mScreenRecorder.stop();
+    }
+
+    public void setCallback(ScreenRecorder.Callback callback) {
+        mScreenRecorder.setCallback(callback);
     }
 
     @Override
@@ -41,6 +44,10 @@ public class ScreenRecordService extends MediaProjectionService {
     public void resume() {
         super.resume();
         mScreenRecorder.resume();
+    }
+
+    public long getPts() {
+        return mScreenRecorder.getPts();
     }
 
     @Override

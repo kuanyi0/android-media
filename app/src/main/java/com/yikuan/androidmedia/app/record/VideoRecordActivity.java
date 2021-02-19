@@ -21,7 +21,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.yikuan.androidmedia.app.R;
 import com.yikuan.androidmedia.app.base.MediaProjectionService;
 import com.yikuan.androidmedia.app.databinding.ActivityVideoRecordBinding;
-import com.yikuan.androidmedia.record.ScreenRecorder2;
+import com.yikuan.androidmedia.record.ScreenRecorder;
 
 public class VideoRecordActivity extends AppCompatActivity implements View.OnClickListener {
     private static final String TAG = "VideoRecordActivity";
@@ -30,36 +30,15 @@ public class VideoRecordActivity extends AppCompatActivity implements View.OnCli
     private int mRecorder = SCREEN_RECORDER;
     private long mStartTime;
     private long mPauseTime;
-    private long mPauseDuration;
     private ActivityVideoRecordBinding mBinding;
     private MediaProjectionService mService;
     private ServiceConnection mConnection = new ServiceConnection() {
+        @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             Log.d(TAG, "onServiceConnected: ");
             MediaProjectionService.MediaProjectionBinder binder = (MediaProjectionService.MediaProjectionBinder) service;
             mService = binder.getService();
-            mService.setCallback(new ScreenRecorder2.Callback() {
-                @Override
-                public void onStarted() {
-                    Log.d(TAG, "onStarted: ");
-                }
-
-                @Override
-                public void onResumed() {
-                    Log.d(TAG, "onResumed: ");
-                }
-
-                @Override
-                public void onPaused() {
-                    Log.d(TAG, "onPaused: ");
-                }
-
-                @Override
-                public void onStopped() {
-                    Log.d(TAG, "onStopped: ");
-                }
-            });
             internalStart();
         }
 
@@ -133,50 +112,86 @@ public class VideoRecordActivity extends AppCompatActivity implements View.OnCli
         startActivityForResult(intent, 0);
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     private void internalStart() {
+        final ScreenRecordService service = (ScreenRecordService) mService;
+        service.setCallback(new ScreenRecorder.Callback() {
+            @Override
+            public void onStarted() {
+                Log.d(TAG, "onStarted: ");
+                mStartTime = SystemClock.elapsedRealtime();
+                mBinding.chronometer.setBase(SystemClock.elapsedRealtime());
+                mBinding.chronometer.start();
+                startTimer();
+                mBinding.btnStart.setEnabled(false);
+                mBinding.btnResume.setEnabled(false);
+                mBinding.btnPause.setEnabled(true);
+                mBinding.btnStop.setEnabled(true);
+            }
+
+            @Override
+            public void onResumed() {
+                Log.d(TAG, "onResumed: ");
+                mStartTime += SystemClock.elapsedRealtime() - mPauseTime;
+                mBinding.chronometer.setBase(mStartTime);
+                mBinding.chronometer.start();
+                startTimer();
+                mBinding.btnResume.setEnabled(false);
+                mBinding.btnPause.setEnabled(true);
+            }
+
+            @Override
+            public void onPaused() {
+                Log.d(TAG, "onPaused: ");
+                mPauseTime = SystemClock.elapsedRealtime();
+                mBinding.chronometer.stop();
+                stopTimer();
+                mBinding.btnResume.setEnabled(true);
+                mBinding.btnPause.setEnabled(false);
+            }
+
+            @Override
+            public void onStopped() {
+                Log.d(TAG, "onStopped: ");
+                mBinding.chronometer.stop();
+                stopTimer();
+                mBinding.btnStart.setEnabled(true);
+                mBinding.btnResume.setEnabled(false);
+                mBinding.btnPause.setEnabled(false);
+                mBinding.btnStop.setEnabled(false);
+            }
+
+            private void startTimer() {
+                mBinding.tvTimer.postDelayed(mRunnable, 100);
+            }
+
+            private void stopTimer() {
+                mBinding.tvTimer.removeCallbacks(mRunnable);
+            }
+
+            private Runnable mRunnable = new Runnable() {
+                @Override
+                public void run() {
+//                    mBinding.tvTimer.setText(service.getPts() / 1000_000f + "s");
+                    mBinding.tvTimer.setText((SystemClock.elapsedRealtime() - mStartTime) / 1000f + "s");
+                    mBinding.tvTimer.postDelayed(mRunnable, 100);
+                }
+            };
+        });
         mService.start();
-        mStartTime = SystemClock.elapsedRealtime();
-        mPauseDuration = 0;
-        mBinding.chronometer.setBase(SystemClock.elapsedRealtime());
-        mBinding.chronometer.start();
-        mBinding.btnStart.setEnabled(false);
-        mBinding.btnResume.setEnabled(false);
-        mBinding.btnPause.setEnabled(true);
-        mBinding.btnStop.setEnabled(true);
     }
 
     private void resume() {
         mService.resume();
-        mPauseDuration += SystemClock.elapsedRealtime() - mPauseTime;
-        Log.d(TAG, "resume: " + getDuration());
-        mBinding.chronometer.setBase(mStartTime + mPauseDuration);
-        mBinding.chronometer.start();
-        mBinding.btnResume.setEnabled(false);
-        mBinding.btnPause.setEnabled(true);
     }
 
     private void pause() {
         mService.pause();
-        Log.d(TAG, "pause: " + getDuration());
-        mPauseTime = SystemClock.elapsedRealtime();
-        mBinding.chronometer.stop();
-        mBinding.btnResume.setEnabled(true);
-        mBinding.btnPause.setEnabled(false);
     }
 
     private void stop() {
         mService.stop();
-        Log.d(TAG, "stop: " + getDuration());
-        mBinding.chronometer.stop();
-        mBinding.btnStart.setEnabled(true);
-        mBinding.btnResume.setEnabled(false);
-        mBinding.btnPause.setEnabled(false);
-        mBinding.btnStop.setEnabled(false);
         unbindService(mConnection);
-    }
-
-    private long getDuration() {
-        return SystemClock.elapsedRealtime() - mStartTime - mPauseDuration;
     }
 
     @Override

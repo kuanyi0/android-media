@@ -7,6 +7,7 @@ import android.media.MediaMuxer;
 import android.media.MediaRecorder;
 import android.media.projection.MediaProjection;
 
+import com.yikuan.androidcommon.util.ScreenUtils;
 import com.yikuan.androidmedia.encode.AudioEncodeParam;
 import com.yikuan.androidmedia.encode.VideoEncodeParam;
 
@@ -45,8 +46,8 @@ public class ScreenRecordParam {
 
     // See ProjectionParam and VideoEncodeParam
     MediaProjection projection;
-    int width = 1080;
-    int height = 1920;
+    int width = ScreenUtils.getScreenWidth();
+    int height = ScreenUtils.getScreenHeight();
     int videoBitRate = 8 * 1024 * 1024;
     @SuppressLint("InlinedApi")
     int colorFormat = MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface;
